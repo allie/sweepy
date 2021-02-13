@@ -387,7 +387,7 @@ void handle_mouseup() {
     reset_game();
   }
 
-  else if (x >= FIELD_X && x < FIELD_X + FIELD_WIDTH && y >= FIELD_Y && y < FIELD_Y + FIELD_HEIGHT) {
+  else if (!face_pressed && x >= FIELD_X && x < FIELD_X + FIELD_WIDTH && y >= FIELD_Y && y < FIELD_Y + FIELD_HEIGHT) {
     int tx = (x - FIELD_X) / TILE_SIZE;
     int ty = (y - FIELD_Y) / TILE_SIZE;
     handle_tile_click(tx, ty);
@@ -400,7 +400,50 @@ void handle_mouseup() {
 
 // Handle mousemove event
 void handle_mousemove() {
+  if (!mouse_down) {
+    return;
+  }
 
+  int needs_repaint = 0;
+
+  int x, y;
+  SDL_GetMouseState(&x, &y);
+  x /= window_scale;
+  y /= window_scale;
+
+  if (face_pressed) {
+    if (x >= FACE_X && x < FACE_X + face_smile.width && y >= FACE_Y && y < FACE_Y + face_smile.height) {
+      if (face != FACE_CLICK) {
+        needs_repaint = 1;
+      }
+      face = FACE_CLICK;
+    } else if (face != FACE_SMILE && face != FACE_DEAD) {
+      // TODO: check if dead
+      face = FACE_SMILE;
+      needs_repaint = 1;
+    }
+  } else if (x >= FIELD_X && x < FIELD_X + FIELD_WIDTH && y >= FIELD_Y && y < FIELD_Y + FIELD_HEIGHT) {
+    int tx = (x - FIELD_X) / TILE_SIZE;
+    int ty = (y - FIELD_Y) / TILE_SIZE;
+
+    if (tiles[ty * width + tx] == TILE_UNCLICKED) {
+      selected_tile.x = tx;
+      selected_tile.y = ty;
+      needs_repaint = 1;
+    } else if (selected_tile.x != -1 && selected_tile.y != -1) {
+      selected_tile.x = -1;
+      selected_tile.y = -1;
+      needs_repaint = 1;
+    }
+  } else if (selected_tile.x != -1 && selected_tile.y != -1) {
+    selected_tile.x = -1;
+    selected_tile.y = -1;
+    needs_repaint = 1;
+  }
+
+  if (needs_repaint) {
+    repaint();
+  }
 }
 
 // Handle keypress
@@ -540,6 +583,9 @@ int main() {
           break;
         case SDL_MOUSEBUTTONUP:
           handle_mouseup();
+          break;
+        case SDL_MOUSEMOTION:
+          handle_mousemove();
           break;
         case SDL_KEYUP:
           handle_keyup(e.key.keysym);
