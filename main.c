@@ -19,8 +19,6 @@
 #define FIELD_WIDTH (width * TILE_SIZE)
 #define FIELD_HEIGHT (height * TILE_SIZE)
 
-#define SCALE 2
-
 #define L_WIDTH (FIELD_WIDTH + PADDING_LEFT + PADDING_RIGHT)
 #define L_HEIGHT (FIELD_HEIGHT + PADDING_BOTTOM + TOP_HEIGHT + PADDING_TOP * 2)
 
@@ -50,6 +48,7 @@ enum {
 
 SDL_Window* window;
 SDL_Renderer* renderer;
+unsigned window_scale = 1;
 
 // Textures
 SDL_Texture* face_click_tex;
@@ -330,7 +329,7 @@ void reset_game() {
 
   tiles = (unsigned char*)calloc(width * height, sizeof(unsigned char));
 
-  SDL_SetWindowSize(window, L_WIDTH * SCALE, L_HEIGHT * SCALE);
+  SDL_SetWindowSize(window, L_WIDTH * window_scale, L_HEIGHT * window_scale);
   SDL_RenderSetLogicalSize(renderer, L_WIDTH, L_HEIGHT);
 
   repaint();
@@ -347,8 +346,8 @@ void handle_mousedown() {
 
   int x, y;
   SDL_GetMouseState(&x, &y);
-  x /= SCALE;
-  y /= SCALE;
+  x /= window_scale;
+  y /= window_scale;
 
   if (x >= FACE_X && x < FACE_X + face_smile.width && y >= FACE_Y && y < FACE_Y + face_smile.height) {
     face_pressed = 1;
@@ -381,8 +380,8 @@ void handle_mouseup() {
 
   int x, y;
   SDL_GetMouseState(&x, &y);
-  x /= SCALE;
-  y /= SCALE;
+  x /= window_scale;
+  y /= window_scale;
 
   if (face_pressed && x >= FACE_X && x < FACE_X + face_smile.width && y >= FACE_Y && y < FACE_Y + face_smile.height) {
     reset_game();
@@ -402,6 +401,25 @@ void handle_mouseup() {
 // Handle mousemove event
 void handle_mousemove() {
 
+}
+
+// Handle keypress
+void handle_keyup(SDL_Keysym sym) {
+  switch (sym.sym) {
+    case SDLK_EQUALS:
+      window_scale++;
+      SDL_SetWindowSize(window, L_WIDTH * window_scale, L_HEIGHT * window_scale);
+      SDL_RenderSetLogicalSize(renderer, L_WIDTH, L_HEIGHT);
+      repaint();
+      break;
+    case SDLK_MINUS:
+      window_scale = window_scale > 1 ? window_scale - 1 : 1;
+      SDL_SetWindowSize(window, L_WIDTH * window_scale, L_HEIGHT * window_scale);
+      SDL_RenderSetLogicalSize(renderer, L_WIDTH, L_HEIGHT);
+      break;
+    default:
+      break;
+  }
 }
 
 // Load textures from image data
@@ -490,8 +508,8 @@ int main() {
 		"mines",
 		SDL_WINDOWPOS_CENTERED,
 		SDL_WINDOWPOS_CENTERED,
-		L_WIDTH * SCALE,
-		L_HEIGHT * SCALE,
+		L_WIDTH * window_scale,
+		L_HEIGHT * window_scale,
 		SDL_WINDOW_OPENGL
 	);
 
@@ -522,6 +540,9 @@ int main() {
           break;
         case SDL_MOUSEBUTTONUP:
           handle_mouseup();
+          break;
+        case SDL_KEYUP:
+          handle_keyup(e.key.keysym);
           break;
 			}
 		}
