@@ -541,6 +541,16 @@ void load_textures() {
   }
 }
 
+void cleanup() {
+  if (tiles != NULL) {
+    free(tiles);
+  }
+
+  if (field != NULL) {
+    free(field);
+  }
+}
+
 int main() {
   if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
 		printf("SDL_Init error: %s\n", SDL_GetError());
@@ -595,6 +605,8 @@ int main() {
     // Throttle at least a tiny bit so it doesn't use 100% CPU
     SDL_Delay(1);
 	}
+
+  cleanup();
 
   return 0;
 }
