@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <time.h>
 #include "images.h"
 
 // Useful macros for drawing the interface
@@ -19,6 +20,15 @@
 #define FIELD_WIDTH (width * TILE_SIZE)
 #define FIELD_HEIGHT (height * TILE_SIZE)
 
+#define TILE_IS_NUMBER(i) (field[i] > 0 && field[i] < 9)
+
+#define FIELD_MIN_WIDTH 9
+#define FIELD_MIN_HEIGHT 9
+#define FIELD_MAX_WIDTH 24
+#define FIELD_MAX_HEIGHT 30
+#define MIN_MINE_COUNT 10
+#define MAX_MINE_COUNT ((width - 1) * (height - 1))
+
 #define L_WIDTH (FIELD_WIDTH + PADDING_LEFT + PADDING_RIGHT)
 #define L_HEIGHT (FIELD_HEIGHT + PADDING_BOTTOM + TOP_HEIGHT + PADDING_TOP * 2)
 
@@ -28,9 +38,9 @@
 
 // Render states for a tile
 enum {
-  TILE_UNCLICKED = 0,
+  TILE_EMPTY = 0,
   // Numbers 1-8 are implied
-  TILE_EMPTY = 9,
+  TILE_UNCLICKED = 9,
   TILE_FLAG = 10,
   TILE_MAYBE = 11,
   TILE_MINE = 12,
@@ -73,12 +83,15 @@ unsigned height = 9;
 unsigned mines_left = 10;
 unsigned timer = 0;
 unsigned face = FACE_SMILE;
+int placed = 0;
+int dead = 0;
 
 unsigned char* tiles = NULL;
 unsigned char* field = NULL;
 
 int mouse_down = 0;
 int face_pressed = 0;
+
 struct {
   int x;
   int y;
@@ -280,7 +293,7 @@ void draw_tile(unsigned state, unsigned x, unsigned y) {
       SDL_RenderCopy(renderer, tile_wrong_tex, &src, &dst);
       break;
     default:
-      SDL_RenderCopy(renderer, tile_num_tex[state], &src, &dst);
+      SDL_RenderCopy(renderer, tile_num_tex[state - 1], &src, &dst);
       break;
   }
 }
@@ -312,6 +325,74 @@ void repaint() {
   SDL_RenderPresent(renderer);
 }
 
+// Place mines and numbers, ignoring the first click position
+void place_mines(unsigned first_x, unsigned first_y) {
+  // Place mines
+  for (int i = 0; i < mines_left; i++) {
+    int placed = 0;
+    while (!placed) {
+      int x = rand() % width;
+      int y = rand() % height;
+      if (x != first_x && y != first_y && field[y * width + x] != TILE_MINE) {
+        field[y * width + x] = TILE_MINE;
+        placed = 1;
+      }
+    }
+  }
+
+  // Place numbers
+  for (int y = 0; y < height; y++) {
+    for (int x = 0; x < width; x++) {
+      if (field[y * width + x] == TILE_MINE) {
+        continue;
+      }
+
+      int nearby_mines = 0;
+
+      // Check left
+      if (x != 0 && field[y * width + (x - 1)] == TILE_MINE) {
+        nearby_mines++;
+      }
+      // Check up left
+      if (x != 0 && y != 0 && field[(y - 1) * width + (x - 1)] == TILE_MINE) {
+        nearby_mines++;
+      }
+      // Check up
+      if (y != 0 && field[(y - 1) * width + x] == TILE_MINE) {
+        nearby_mines++;
+      }
+      // Check up right
+      if (y != 0 && x != width - 1 && field[(y - 1) * width + (x + 1)] == TILE_MINE) {
+        nearby_mines++;
+      }
+      // Check right
+      if (x != width - 1 && field[y * width + (x + 1)] == TILE_MINE) {
+        nearby_mines++;
+      }
+      // Check down right
+      if (x != width - 1 && y != height - 1 && field[(y + 1) * width + (x + 1)] == TILE_MINE) {
+        nearby_mines++;
+      }
+      // Check down
+      if (y != height - 1 && field[(y + 1) * width + x] == TILE_MINE) {
+        nearby_mines++;
+      }
+      // Check down left
+      if (x != 0 && y != height - 1 && field[(y + 1) * width + (x - 1)] == TILE_MINE) {
+        nearby_mines++;
+      }
+
+      if (nearby_mines != 0) {
+        field[y * width + x] = nearby_mines;
+      } else {
+        field[y * width + x] = TILE_EMPTY;
+      }
+    }
+  }
+
+  placed = 1;
+}
+
 // Start a new game
 void reset_game() {
   width = 9;
@@ -322,12 +403,24 @@ void reset_game() {
   selected_tile.x = -1;
   selected_tile.y = -1;
   face_pressed = 0;
+  placed = 0;
+  dead = 0;
 
   if (tiles != NULL) {
     free(tiles);
   }
 
+  if (field != NULL) {
+    free(field);
+  }
+
   tiles = (unsigned char*)calloc(width * height, sizeof(unsigned char));
+  field = (unsigned char*)calloc(width * height, sizeof(unsigned char));
+
+  // Initialize tiles
+  for (int i = 0; i < width * height; i++) {
+    tiles[i] = TILE_UNCLICKED;
+  }
 
   SDL_SetWindowSize(window, L_WIDTH * window_scale, L_HEIGHT * window_scale);
   SDL_RenderSetLogicalSize(renderer, L_WIDTH, L_HEIGHT);
@@ -335,9 +428,74 @@ void reset_game() {
   repaint();
 }
 
+// Mine was clicked, reveal all the mines and wrong flags
+void game_over() {
+  dead = 1;
+
+  for (int i = 0; i < width * height; i++) {
+    if (field[i] == TILE_MINE) {
+      if (tiles[i] == TILE_UNCLICKED) {
+        tiles[i] = TILE_MINE;
+      }
+    }
+  }
+}
+
+// Recursive function to clear any empty tiles, up until a number tile is reached
+void flood_fill(unsigned x, unsigned y) {
+  int i = y * width + x;
+
+  tiles[i] = field[i];
+
+  unsigned min_x = x != 0 ? x - 1 : x;
+  unsigned min_y = y != 0 ? y - 1 : y;
+  unsigned max_x = x != width - 1 ? x + 1 : x;
+  unsigned max_y = y != height - 1 ? y + 1 : y;
+
+  for (unsigned ny = min_y; ny <= max_y; ny++) {
+    for (unsigned nx = min_x; nx <= max_x; nx++) {
+      if (nx == x && ny == x) {
+        continue;
+      }
+
+      unsigned ni = ny * width + nx;
+
+      // If the current tile is a number tile and the next tile is a number tile, skip it
+      if (TILE_IS_NUMBER(i) && TILE_IS_NUMBER(ni)) {
+        continue;
+      }
+
+      // Otherwise, recurse with the next tile, if it's eligible
+      if (
+        field[ni] < TILE_UNCLICKED &&
+        tiles[ni] == TILE_UNCLICKED
+      ) {
+        flood_fill(nx, ny);
+      }
+    }
+  }
+}
+
 // Reveal a tile after mouseup while hovering over it
 void handle_tile_click(unsigned x, unsigned y) {
-  tiles[y * width + x] = TILE_MINE;
+  if (!placed) {
+    place_mines(x, y);
+  }
+
+  int i = y * width + x;
+
+  if (tiles[i] != TILE_UNCLICKED && tiles[i] != TILE_MAYBE) {
+    return;
+  }
+
+  if (field[i] == TILE_MINE) {
+    tiles[i] = TILE_REDMINE;
+    game_over();
+  } else if (field[i] != TILE_EMPTY) {
+    tiles[i] = field[i];
+  } else {
+    flood_fill(x, y);
+  }
 }
 
 // Handle mousedown event
@@ -352,11 +510,11 @@ void handle_mousedown() {
   if (x >= FACE_X && x < FACE_X + face_smile.width && y >= FACE_Y && y < FACE_Y + face_smile.height) {
     face_pressed = 1;
     face = FACE_CLICK;
-  } else {
+  } else if (!dead) {
     face = FACE_OPEN;
   }
 
-  if (x >= FIELD_X && x < FIELD_X + FIELD_WIDTH && y >= FIELD_Y && y < FIELD_Y + FIELD_HEIGHT) {
+  if (!dead && x >= FIELD_X && x < FIELD_X + FIELD_WIDTH && y >= FIELD_Y && y < FIELD_Y + FIELD_HEIGHT) {
     int tx = (x - FIELD_X) / TILE_SIZE;
     int ty = (y - FIELD_Y) / TILE_SIZE;
 
@@ -375,9 +533,6 @@ void handle_mouseup() {
   selected_tile.x = -1;
   selected_tile.y = -1;
 
-  // TODO: check if dead
-  face = FACE_SMILE;
-
   int x, y;
   SDL_GetMouseState(&x, &y);
   x /= window_scale;
@@ -387,14 +542,15 @@ void handle_mouseup() {
     reset_game();
   }
 
-  else if (!face_pressed && x >= FIELD_X && x < FIELD_X + FIELD_WIDTH && y >= FIELD_Y && y < FIELD_Y + FIELD_HEIGHT) {
+  else if (!dead && !face_pressed && x >= FIELD_X && x < FIELD_X + FIELD_WIDTH && y >= FIELD_Y && y < FIELD_Y + FIELD_HEIGHT) {
     int tx = (x - FIELD_X) / TILE_SIZE;
     int ty = (y - FIELD_Y) / TILE_SIZE;
     handle_tile_click(tx, ty);
   }
 
+  face = dead ? FACE_DEAD : FACE_SMILE;
   face_pressed = 0;
-  
+
   repaint();
 }
 
@@ -418,11 +574,10 @@ void handle_mousemove() {
       }
       face = FACE_CLICK;
     } else if (face != FACE_SMILE && face != FACE_DEAD) {
-      // TODO: check if dead
-      face = FACE_SMILE;
+      face = dead ? FACE_DEAD : FACE_SMILE;
       needs_repaint = 1;
     }
-  } else if (x >= FIELD_X && x < FIELD_X + FIELD_WIDTH && y >= FIELD_Y && y < FIELD_Y + FIELD_HEIGHT) {
+  } else if (!dead && x >= FIELD_X && x < FIELD_X + FIELD_WIDTH && y >= FIELD_Y && y < FIELD_Y + FIELD_HEIGHT) {
     int tx = (x - FIELD_X) / TILE_SIZE;
     int ty = (y - FIELD_Y) / TILE_SIZE;
 
@@ -459,6 +614,10 @@ void handle_keyup(SDL_Keysym sym) {
       window_scale = window_scale > 1 ? window_scale - 1 : 1;
       SDL_SetWindowSize(window, L_WIDTH * window_scale, L_HEIGHT * window_scale);
       SDL_RenderSetLogicalSize(renderer, L_WIDTH, L_HEIGHT);
+      break;
+    case SDLK_F2:
+    case SDLK_r:
+      reset_game();
       break;
     default:
       break;
@@ -556,6 +715,8 @@ int main() {
 		printf("SDL_Init error: %s\n", SDL_GetError());
 		return -1;
 	}
+
+  srand(time(0));
 
   window = SDL_CreateWindow(
 		"mines",
