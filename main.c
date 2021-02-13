@@ -53,7 +53,8 @@ enum {
   FACE_SMILE,
   FACE_CLICK,
   FACE_OPEN,
-  FACE_DEAD
+  FACE_DEAD,
+  FACE_WIN
 };
 
 SDL_Window* window;
@@ -65,6 +66,7 @@ SDL_Texture* face_click_tex;
 SDL_Texture* face_dead_tex;
 SDL_Texture* face_smile_tex;
 SDL_Texture* face_open_tex;
+SDL_Texture* face_win_tex;
 SDL_Texture* game_corner_tex;
 SDL_Texture* top_corner_tex;
 SDL_Texture* tile_empty_tex;
@@ -76,6 +78,7 @@ SDL_Texture* tile_unclicked_tex;
 SDL_Texture* tile_wrong_tex;
 SDL_Texture* tile_num_tex[8];
 SDL_Texture* timer_num_tex[10];
+SDL_Texture* timer_minus_tex;
 
 // Game state variables
 unsigned width = 9;
@@ -259,6 +262,9 @@ void draw_face() {
       break;
     case FACE_DEAD:
       SDL_RenderCopy(renderer, face_dead_tex, &src, &dst);
+      break;
+    case FACE_WIN:
+      SDL_RenderCopy(renderer, face_win_tex, &src, &dst);
       break;
     default:
       break;
@@ -662,6 +668,9 @@ void load_textures() {
   face_open_tex = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGB24, SDL_TEXTUREACCESS_STATIC, face_open.width, face_open.height);
   SDL_UpdateTexture(face_open_tex, NULL, face_open.pixels, face_open.width * 3);
 
+  face_win_tex = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGB24, SDL_TEXTUREACCESS_STATIC, face_win.width, face_win.height);
+  SDL_UpdateTexture(face_win_tex, NULL, face_win.pixels, face_win.width * 3);
+
   game_corner_tex = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGB24, SDL_TEXTUREACCESS_STATIC, game_corner.width, game_corner.height);
   SDL_UpdateTexture(game_corner_tex, NULL, game_corner.pixels, game_corner.width * 3);
   
@@ -688,6 +697,9 @@ void load_textures() {
 
   tile_wrong_tex = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGB24, SDL_TEXTUREACCESS_STATIC, tile_wrong.width, tile_wrong.height);
   SDL_UpdateTexture(tile_wrong_tex, NULL, tile_wrong.pixels, tile_wrong.width * 3);
+
+  timer_minus_tex = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGB24, SDL_TEXTUREACCESS_STATIC, timer_minus.width, timer_minus.height);
+  SDL_UpdateTexture(timer_minus_tex, NULL, timer_minus.pixels, timer_minus.width * 3);
 
   for (int i = 0; i < 8; i++) {
     tile_num_tex[i] = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGB24, SDL_TEXTUREACCESS_STATIC, tile_num[i].width, tile_num[i].height);

@@ -11,6 +11,7 @@ typedef struct {
 #include "images/face_dead.h"
 #include "images/face_smile.h"
 #include "images/face_open.h"
+#include "images/face_win.h"
 #include "images/game_corner.h"
 #include "images/top_corner.h"
 #include "images/tile_1.h"
@@ -38,5 +39,6 @@ typedef struct {
 #include "images/timer_7.h"
 #include "images/timer_8.h"
 #include "images/timer_9.h"
+#include "images/timer_minus.h"
 
 #endif
