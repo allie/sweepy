@@ -126,38 +126,78 @@ void draw_frame() {
   SDL_SetRenderDrawColor(renderer, 128, 128, 128, 255);
   // Top panel frame top left
   { // Top
-    SDL_Rect dst = {PADDING_LEFT - 3, PADDING_TOP, FIELD_WIDTH + 4, 2};
+    SDL_Rect dst = {
+      PADDING_LEFT - 3,
+      PADDING_TOP,
+      FIELD_WIDTH + 4,
+      2
+    };
     SDL_RenderFillRect(renderer, &dst);
   }
   { // Left
-    SDL_Rect dst = {PADDING_LEFT - 3, PADDING_TOP + 2, 2, TOP_HEIGHT - 4};
+    SDL_Rect dst = {
+      PADDING_LEFT - 3,
+      PADDING_TOP + 2,
+      2,
+      TOP_HEIGHT - 4
+    };
     SDL_RenderFillRect(renderer, &dst); 
   }
   // Mine field frame top left
   { // Top
-    SDL_Rect dst = {PADDING_LEFT, PADDING_TOP * 2 + TOP_HEIGHT - 3, FIELD_WIDTH, 3};
+    SDL_Rect dst = {
+      PADDING_LEFT,
+      PADDING_TOP * 2 + TOP_HEIGHT - 3,
+      FIELD_WIDTH,
+      3
+    };
     SDL_RenderFillRect(renderer, &dst);
   }
   { // Left
-    SDL_Rect dst = {PADDING_LEFT - 3, PADDING_TOP * 2 + TOP_HEIGHT - 3, 3, height * TILE_SIZE + 3};
+    SDL_Rect dst = {
+      PADDING_LEFT - 3,
+      PADDING_TOP * 2 + TOP_HEIGHT - 3,
+      3,
+      height * TILE_SIZE + 3
+    };
     SDL_RenderFillRect(renderer, &dst);
   }
   // Mine count frame top left
   { // Top
-    SDL_Rect dst = {PADDING_LEFT + 4, PADDING_TOP + 6, 40, 1};
+    SDL_Rect dst = {
+      PADDING_LEFT + 4,
+      PADDING_TOP + 6,
+      40,
+      1
+    };
     SDL_RenderFillRect(renderer, &dst);
   }
   { // Left
-    SDL_Rect dst = {PADDING_LEFT + 4, PADDING_TOP + 7, 1, 23};
+    SDL_Rect dst = {
+      PADDING_LEFT + 4,
+      PADDING_TOP + 7,
+      1,
+      23
+    };
     SDL_RenderFillRect(renderer, &dst);
   }
   // Timer frame top left
   { // Top
-    SDL_Rect dst = {L_WIDTH - PADDING_RIGHT - 47, PADDING_TOP + 6, 40, 1};
+    SDL_Rect dst = {
+      L_WIDTH - PADDING_RIGHT - 47,
+      PADDING_TOP + 6,
+      40,
+      1
+    };
     SDL_RenderFillRect(renderer, &dst);
   }
   { // Left
-    SDL_Rect dst = {L_WIDTH - PADDING_RIGHT - 47, PADDING_TOP + 7, 1, 23};
+    SDL_Rect dst = {
+      L_WIDTH - PADDING_RIGHT - 47,
+      PADDING_TOP + 7,
+      1,
+      23
+    };
     SDL_RenderFillRect(renderer, &dst);
   }
 
@@ -165,71 +205,161 @@ void draw_frame() {
   SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
   // Window frame top left
   { // Top
-    SDL_Rect dst = {0, 0, L_WIDTH, 3};
+    SDL_Rect dst = {
+      0,
+      0,
+      L_WIDTH,
+      3
+    };
     SDL_RenderFillRect(renderer, &dst);
   }
   { // Left
-    SDL_Rect dst = {0, 0, 3, L_HEIGHT};
+    SDL_Rect dst = {
+      0,
+      0,
+      3,
+      L_HEIGHT
+    };
     SDL_RenderFillRect(renderer, &dst);
   }
   // Top panel frame bottom right
   { // Bottom
-    SDL_Rect dst = {PADDING_LEFT - 1, PADDING_TOP + TOP_HEIGHT - 2, L_WIDTH - PADDING_LEFT - PADDING_RIGHT + 2, 2};
+    SDL_Rect dst = {
+      PADDING_LEFT - 1,
+      PADDING_TOP + TOP_HEIGHT - 2,
+      L_WIDTH - PADDING_LEFT - PADDING_RIGHT + 2,
+      2
+    };
     SDL_RenderFillRect(renderer, &dst);
   }
   { // Right
-    SDL_Rect dst = {L_WIDTH - PADDING_RIGHT + 1, PADDING_TOP + 2, 2, TOP_HEIGHT - 2};
+    SDL_Rect dst = {
+      L_WIDTH - PADDING_RIGHT + 1,
+      PADDING_TOP + 2,
+      2,
+      TOP_HEIGHT - 2
+    };
     SDL_RenderFillRect(renderer, &dst);
   }
   // Mine field frame bottom right
   { // Bottom
-    SDL_Rect dst = {PADDING_LEFT, L_HEIGHT - PADDING_BOTTOM, FIELD_WIDTH, 3};
+    SDL_Rect dst = {
+      PADDING_LEFT,
+      L_HEIGHT - PADDING_BOTTOM,
+      FIELD_WIDTH,
+      3
+    };
     SDL_RenderFillRect(renderer, &dst);
   }
   { // Right
-    SDL_Rect dst = {L_WIDTH - PADDING_RIGHT, PADDING_TOP * 2 + TOP_HEIGHT, 3, height * TILE_SIZE + 3};
+    SDL_Rect dst = {
+      L_WIDTH - PADDING_RIGHT,
+      PADDING_TOP * 2 + TOP_HEIGHT,
+      3,
+      height * TILE_SIZE + 3
+    };
     SDL_RenderFillRect(renderer, &dst);
   }
   // Mine count frame bottom right
   { // Bottom
-    SDL_Rect dst = {PADDING_LEFT + 5, PADDING_TOP + 6 + 24, 40, 1};
+    SDL_Rect dst = {
+      PADDING_LEFT + 5,
+      PADDING_TOP + 6 + 24,
+      40,
+      1
+    };
     SDL_RenderFillRect(renderer, &dst);
   }
   { // Right
-    SDL_Rect dst = {PADDING_LEFT + 4 + 40, PADDING_TOP + 7, 1, 23};
+    SDL_Rect dst = {
+      PADDING_LEFT + 4 + 40,
+      PADDING_TOP + 7,
+      1,
+      23
+    };
     SDL_RenderFillRect(renderer, &dst);
   }
   // Timer frame bottom right
   { // Bottom
-    SDL_Rect dst = {L_WIDTH - PADDING_RIGHT - 6 - 40, PADDING_TOP + 6 + 24, 40, 1};
+    SDL_Rect dst = {
+      L_WIDTH - PADDING_RIGHT - 6 - 40,
+      PADDING_TOP + 6 + 24,
+      40,
+      1
+    };
     SDL_RenderFillRect(renderer, &dst);
   }
   { // Right
-    SDL_Rect dst = {L_WIDTH - PADDING_RIGHT - 7, PADDING_TOP + 7, 1, 23};
+    SDL_Rect dst = {
+      L_WIDTH - PADDING_RIGHT - 7,
+      PADDING_TOP + 7,
+      1,
+      23
+    };
     SDL_RenderFillRect(renderer, &dst);
   }
 
   // Corner textures
   // Top frame corners
   { // Bottom left
-    SDL_Rect src = {0, 0, top_corner.width, top_corner.height};
-    SDL_Rect dst = {PADDING_LEFT - 3, PADDING_TOP + TOP_HEIGHT - 2, top_corner.width, top_corner.height};
+    SDL_Rect src = {
+      0,
+      0,
+      top_corner.width,
+      top_corner.height
+    };
+    SDL_Rect dst = {
+      PADDING_LEFT - 3,
+      PADDING_TOP + TOP_HEIGHT - 2,
+      top_corner.width,
+      top_corner.height
+    };
     SDL_RenderCopy(renderer, top_corner_tex, &src, &dst);
   }
   { // Top right
-    SDL_Rect src = {0, 0, top_corner.width, top_corner.height};
-    SDL_Rect dst = {L_WIDTH - PADDING_RIGHT + 1, PADDING_TOP, top_corner.width, top_corner.height};
+    SDL_Rect src = {
+      0,
+      0,
+      top_corner.width,
+      top_corner.height
+    };
+    SDL_Rect dst = {
+      L_WIDTH - PADDING_RIGHT + 1,
+      PADDING_TOP,
+      top_corner.width,
+      top_corner.height
+    };
     SDL_RenderCopy(renderer, top_corner_tex, &src, &dst);
   }
   // Mine field corners
   { // Bottom left
-    SDL_Rect src = {0, 0, game_corner.width, game_corner.height};
-    SDL_Rect dst = {PADDING_LEFT - 3, L_HEIGHT - PADDING_BOTTOM, game_corner.width, game_corner.height};
+    SDL_Rect src = {
+      0,
+      0,
+      game_corner.width,
+      game_corner.height
+    };
+    SDL_Rect dst = {
+      PADDING_LEFT - 3,
+      L_HEIGHT - PADDING_BOTTOM,
+      game_corner.width,
+      game_corner.height
+    };
     SDL_RenderCopy(renderer, game_corner_tex, &src, &dst);
   }
   { // Top right
-    SDL_Rect src = {0, 0, game_corner.width, game_corner.height};
-    SDL_Rect dst = {L_WIDTH - PADDING_RIGHT, PADDING_TOP * 2 + TOP_HEIGHT - 3, game_corner.width, game_corner.height};
+    SDL_Rect src = {
+      0,
+      0,
+      game_corner.width,
+      game_corner.height
+    };
+    SDL_Rect dst = {
+      L_WIDTH - PADDING_RIGHT,
+      PADDING_TOP * 2 + TOP_HEIGHT - 3,
+      game_corner.width,
+      game_corner.height
+    };
     SDL_RenderCopy(renderer, game_corner_tex, &src, &dst);
   }
 }
