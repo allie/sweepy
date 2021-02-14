@@ -507,7 +507,9 @@ void game_over() {
   dead = 1;
 
   for (int i = 0; i < width * height; i++) {
-    if (field[i] == TILE_MINE) {
+    if (tiles[i] == TILE_FLAG && field[i] != TILE_MINE) {
+      tiles[i] = TILE_WRONG;
+    } else if (field[i] == TILE_MINE) {
       if (tiles[i] == TILE_UNCLICKED) {
         tiles[i] = TILE_MINE;
       }
