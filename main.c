@@ -1007,7 +1007,7 @@ int main() {
   srand(time(0));
 
   window = SDL_CreateWindow(
-		"mines",
+		"Sweepy",
 		SDL_WINDOWPOS_CENTERED,
 		SDL_WINDOWPOS_CENTERED,
 		L_WIDTH * window_scale,
