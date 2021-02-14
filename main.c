@@ -357,37 +357,23 @@ void place_mines(unsigned first_x, unsigned first_y) {
 
       int nearby_mines = 0;
 
-      // Check left
-      if (x != 0 && field[y * width + (x - 1)] == TILE_MINE) {
-        nearby_mines++;
-      }
-      // Check up left
-      if (x != 0 && y != 0 && field[(y - 1) * width + (x - 1)] == TILE_MINE) {
-        nearby_mines++;
-      }
-      // Check up
-      if (y != 0 && field[(y - 1) * width + x] == TILE_MINE) {
-        nearby_mines++;
-      }
-      // Check up right
-      if (y != 0 && x != width - 1 && field[(y - 1) * width + (x + 1)] == TILE_MINE) {
-        nearby_mines++;
-      }
-      // Check right
-      if (x != width - 1 && field[y * width + (x + 1)] == TILE_MINE) {
-        nearby_mines++;
-      }
-      // Check down right
-      if (x != width - 1 && y != height - 1 && field[(y + 1) * width + (x + 1)] == TILE_MINE) {
-        nearby_mines++;
-      }
-      // Check down
-      if (y != height - 1 && field[(y + 1) * width + x] == TILE_MINE) {
-        nearby_mines++;
-      }
-      // Check down left
-      if (x != 0 && y != height - 1 && field[(y + 1) * width + (x - 1)] == TILE_MINE) {
-        nearby_mines++;
+      // Determine the indices of the surrounding tiles
+      unsigned min_x = x != 0 ? x - 1 : x;
+      unsigned min_y = y != 0 ? y - 1 : y;
+      unsigned max_x = x != width - 1 ? x + 1 : x;
+      unsigned max_y = y != height - 1 ? y + 1 : y;
+
+      // Check surrounding tiles for mines
+      for (unsigned ny = min_y; ny <= max_y; ny++) {
+        for (unsigned nx = min_x; nx <= max_x; nx++) {
+          if (nx == x && ny == y) {
+            continue;
+          }
+
+          if (field[ny * width + nx] == TILE_MINE) {
+            nearby_mines++;
+          }
+        }
       }
 
       if (nearby_mines != 0) {
