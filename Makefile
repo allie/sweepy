@@ -26,5 +26,5 @@ $(EXECUTABLE): $(OBJECTS)
 	$(CC) $(CFLAGS) $< -o $@
 
 clean:
-	rm -f $(EXECUTABLE)
-	find . -name "*.o" -print0 | xargs -0 rm -rf
+	rm $(EXECUTABLE)
+	find . -name "*.o" -print0 | xargs -0 rm
