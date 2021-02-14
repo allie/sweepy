@@ -25,6 +25,7 @@ typedef struct {
 #include "images/tile_empty.h"
 #include "images/tile_flag.h"
 #include "images/tile_maybe.h"
+#include "images/tile_maybepress.h"
 #include "images/tile_mine.h"
 #include "images/tile_redmine.h"
 #include "images/tile_unclicked.h"

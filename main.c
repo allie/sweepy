@@ -5,7 +5,7 @@
 #include <time.h>
 #include "images.h"
 
-// Useful macros for drawing the interface
+// Useful macros for drawing the interface and doing calculations
 #define PADDING_LEFT 12
 #define PADDING_RIGHT 8
 #define PADDING_BOTTOM 8
@@ -43,9 +43,10 @@ enum {
   TILE_UNCLICKED = 9,
   TILE_FLAG = 10,
   TILE_MAYBE = 11,
-  TILE_MINE = 12,
-  TILE_REDMINE = 13,
-  TILE_WRONG = 14
+  TILE_MAYBEPRESS = 12,
+  TILE_MINE = 13,
+  TILE_REDMINE = 14,
+  TILE_WRONG = 15
 };
 
 // Face button states
@@ -72,6 +73,7 @@ SDL_Texture* top_corner_tex;
 SDL_Texture* tile_empty_tex;
 SDL_Texture* tile_flag_tex;
 SDL_Texture* tile_maybe_tex;
+SDL_Texture* tile_maybepress_tex;
 SDL_Texture* tile_mine_tex;
 SDL_Texture* tile_redmine_tex;
 SDL_Texture* tile_unclicked_tex;
@@ -83,22 +85,40 @@ SDL_Texture* timer_minus_tex;
 // Game state variables
 unsigned width = 9;
 unsigned height = 9;
-unsigned mines_left = 10;
 unsigned timer = 0;
 unsigned face = FACE_SMILE;
+
+unsigned total_mines = 10;
+int mines_left = 10;
+
 int placed = 0;
 int dead = 0;
+int win = 0;
 
 unsigned char* tiles = NULL;
 unsigned char* field = NULL;
 
-int mouse_down = 0;
 int face_pressed = 0;
+
+int shift_down = 0;
+
+struct {
+  int left;
+  int middle;
+  int right;
+} mouse_buttons = {
+  0,
+  0,
+  0
+};
 
 struct {
   int x;
   int y;
-} selected_tile;
+} selected_tile = {
+  -1,
+  -1
+};
 
 // Draw the frame for the game
 void draw_frame() {
@@ -289,6 +309,9 @@ void draw_tile(unsigned state, unsigned x, unsigned y) {
     case TILE_MAYBE:
       SDL_RenderCopy(renderer, tile_maybe_tex, &src, &dst);
       break;
+    case TILE_MAYBEPRESS:
+      SDL_RenderCopy(renderer, tile_maybepress_tex, &src, &dst);
+      break;
     case TILE_MINE:
       SDL_RenderCopy(renderer, tile_mine_tex, &src, &dst);
       break;
@@ -323,7 +346,11 @@ void repaint() {
   }
 
   if (selected_tile.x > -1 && selected_tile.y > -1) {
-    draw_tile(TILE_EMPTY, selected_tile.x, selected_tile.y);
+    if (tiles[selected_tile.y * width + selected_tile.x] == TILE_MAYBE) {
+      draw_tile(TILE_MAYBEPRESS, selected_tile.x, selected_tile.y);
+    } else {
+      draw_tile(TILE_EMPTY, selected_tile.x, selected_tile.y);
+    }
   }
 
   draw_face();
@@ -403,14 +430,19 @@ void place_mines(unsigned first_x, unsigned first_y) {
 void reset_game() {
   width = 9;
   height = 9;
-  mines_left = 10;
   timer = 0;
   face = FACE_SMILE;
+
   selected_tile.x = -1;
   selected_tile.y = -1;
   face_pressed = 0;
+
+  total_mines = 2;
+  mines_left = total_mines;
+
   placed = 0;
   dead = 0;
+  win = 0;
 
   if (tiles != NULL) {
     free(tiles);
@@ -444,6 +476,25 @@ void game_over() {
         tiles[i] = TILE_MINE;
       }
     }
+  }
+}
+
+// Check whether the game has been won
+void check_win() {
+  if (mines_left != 0) {
+    return;
+  }
+
+  unsigned uncovered = 0;
+  for (int i = 0; i < width * height; i++) {
+    if (tiles[i] != TILE_UNCLICKED && tiles[i] != TILE_FLAG && tiles[i] != TILE_MAYBE) {
+      uncovered++;
+    }
+  }
+
+  if (uncovered == width * height - total_mines) {
+    win = 1;
+    face = FACE_WIN;
   }
 }
 
@@ -499,34 +550,70 @@ void handle_tile_click(unsigned x, unsigned y) {
     game_over();
   } else if (field[i] != TILE_EMPTY) {
     tiles[i] = field[i];
+    check_win();
   } else {
     flood_fill(x, y);
   }
 }
 
 // Handle mousedown event
-void handle_mousedown() {
-  mouse_down = 1;
+void handle_mousedown(unsigned button) {
+  if (button == SDL_BUTTON_LEFT) {
+    mouse_buttons.left = 1;
+  } else if (button == SDL_BUTTON_MIDDLE) {
+    mouse_buttons.middle = 1;
+  } else if (button == SDL_BUTTON_RIGHT) {
+    mouse_buttons.right = 1;
+  }
 
   int x, y;
   SDL_GetMouseState(&x, &y);
   x /= window_scale;
   y /= window_scale;
 
-  if (x >= FACE_X && x < FACE_X + face_smile.width && y >= FACE_Y && y < FACE_Y + face_smile.height) {
-    face_pressed = 1;
-    face = FACE_CLICK;
-  } else if (!dead) {
-    face = FACE_OPEN;
+  // Change the face, but ignore right clicks
+  if (!(mouse_buttons.right && !mouse_buttons.left && !mouse_buttons.middle)) {
+    if (x >= FACE_X && x < FACE_X + face_smile.width && y >= FACE_Y && y < FACE_Y + face_smile.height) {
+      face_pressed = 1;
+      face = FACE_CLICK;
+    } else if (!dead && !win) {
+      face = FACE_OPEN;
+    }
   }
 
-  if (!dead && x >= FIELD_X && x < FIELD_X + FIELD_WIDTH && y >= FIELD_Y && y < FIELD_Y + FIELD_HEIGHT) {
-    int tx = (x - FIELD_X) / TILE_SIZE;
-    int ty = (y - FIELD_Y) / TILE_SIZE;
+  // Clicks within the playfield
+  if (
+    !dead &&
+    !win &&
+    x >= FIELD_X &&
+    x < FIELD_X + FIELD_WIDTH &&
+    y >= FIELD_Y &&
+    y < FIELD_Y + FIELD_HEIGHT
+  ) {
+    unsigned tx = (x - FIELD_X) / TILE_SIZE;
+    unsigned ty = (y - FIELD_Y) / TILE_SIZE;
+    unsigned i = ty * width + tx;
 
-    if (tiles[ty * width + tx] == TILE_UNCLICKED) {
-      selected_tile.x = tx;
-      selected_tile.y = ty;
+    // Left click only
+    if (mouse_buttons.left && !mouse_buttons.right && !mouse_buttons.middle) {
+      if (tiles[i] == TILE_UNCLICKED || tiles[i] == TILE_MAYBE) {
+        selected_tile.x = tx;
+        selected_tile.y = ty;
+      }
+    }
+    // Right click only
+    if (mouse_buttons.right && !mouse_buttons.left && !mouse_buttons.middle) {
+      if (tiles[i] == TILE_UNCLICKED) {
+        tiles[i] = TILE_FLAG;
+        mines_left--;
+        check_win();
+      } else if (tiles[i] == TILE_FLAG) {
+        tiles[i] = TILE_MAYBE;
+        mines_left++;
+      } else if (tiles[i] == TILE_MAYBE) {
+        tiles[i] = TILE_UNCLICKED;
+      }
+      mouse_buttons.right = 0;
     }
   }
 
@@ -534,8 +621,7 @@ void handle_mousedown() {
 }
 
 // Handle mouseup event
-void handle_mouseup() {
-  mouse_down = 0;
+void handle_mouseup(unsigned button) {
   selected_tile.x = -1;
   selected_tile.y = -1;
 
@@ -544,25 +630,48 @@ void handle_mouseup() {
   x /= window_scale;
   y /= window_scale;
 
+  // Change the face, if it's pressed down
   if (face_pressed && x >= FACE_X && x < FACE_X + face_smile.width && y >= FACE_Y && y < FACE_Y + face_smile.height) {
     reset_game();
   }
 
-  else if (!dead && !face_pressed && x >= FIELD_X && x < FIELD_X + FIELD_WIDTH && y >= FIELD_Y && y < FIELD_Y + FIELD_HEIGHT) {
+  // Clicks within the playfield
+  else if (
+    mouse_buttons.left &&
+    !mouse_buttons.right &&
+    !mouse_buttons.middle &&
+    !dead &&
+    !win &&
+    !face_pressed &&
+    x >= FIELD_X &&
+    x < FIELD_X + FIELD_WIDTH &&
+    y >= FIELD_Y &&
+    y < FIELD_Y + FIELD_HEIGHT
+  ) {
     int tx = (x - FIELD_X) / TILE_SIZE;
     int ty = (y - FIELD_Y) / TILE_SIZE;
     handle_tile_click(tx, ty);
   }
 
-  face = dead ? FACE_DEAD : FACE_SMILE;
-  face_pressed = 0;
+  if (!win) {
+    face = dead ? FACE_DEAD : FACE_SMILE;
+    face_pressed = 0;
+  }
+
+  if (button == SDL_BUTTON_LEFT) {
+    mouse_buttons.left = 0;
+  } else if (button == SDL_BUTTON_MIDDLE) {
+    mouse_buttons.middle = 0;
+  } else if (button == SDL_BUTTON_RIGHT) {
+    mouse_buttons.right = 0;
+  }
 
   repaint();
 }
 
 // Handle mousemove event
 void handle_mousemove() {
-  if (!mouse_down) {
+  if (!mouse_buttons.left) {
     return;
   }
 
@@ -573,21 +682,38 @@ void handle_mousemove() {
   x /= window_scale;
   y /= window_scale;
 
+  // If the face button was pressed in a prior mousedown event
   if (face_pressed) {
-    if (x >= FACE_X && x < FACE_X + face_smile.width && y >= FACE_Y && y < FACE_Y + face_smile.height) {
+    // If the mouse is within the face button, press it down
+    if (
+      x >= FACE_X &&
+      x < FACE_X + face_smile.width &&
+      y >= FACE_Y &&
+      y < FACE_Y + face_smile.height
+    ) {
       if (face != FACE_CLICK) {
         needs_repaint = 1;
       }
       face = FACE_CLICK;
-    } else if (face != FACE_SMILE && face != FACE_DEAD) {
-      face = dead ? FACE_DEAD : FACE_SMILE;
+    }
+    // Otherwise, reset it
+    else if (face != FACE_SMILE && face != FACE_DEAD) {
+      face = win ? FACE_WIN : (dead ? FACE_DEAD : FACE_SMILE);
       needs_repaint = 1;
     }
-  } else if (!dead && x >= FIELD_X && x < FIELD_X + FIELD_WIDTH && y >= FIELD_Y && y < FIELD_Y + FIELD_HEIGHT) {
-    int tx = (x - FIELD_X) / TILE_SIZE;
-    int ty = (y - FIELD_Y) / TILE_SIZE;
+  } else if (
+    !dead &&
+    !win &&
+    x >= FIELD_X &&
+    x < FIELD_X + FIELD_WIDTH &&
+    y >= FIELD_Y &&
+    y < FIELD_Y + FIELD_HEIGHT
+  ) {
+    unsigned tx = (x - FIELD_X) / TILE_SIZE;
+    unsigned ty = (y - FIELD_Y) / TILE_SIZE;
+    unsigned i = ty * width + tx;
 
-    if (tiles[ty * width + tx] == TILE_UNCLICKED) {
+    if (tiles[i] == TILE_UNCLICKED || tiles[i] == TILE_MAYBE) {
       selected_tile.x = tx;
       selected_tile.y = ty;
       needs_repaint = 1;
@@ -624,6 +750,22 @@ void handle_keyup(SDL_Keysym sym) {
     case SDLK_F2:
     case SDLK_r:
       reset_game();
+      break;
+    case SDLK_LSHIFT:
+    case SDLK_RSHIFT:
+      shift_down = 0;
+      break;
+    default:
+      break;
+  }
+}
+
+// Handle key down
+void handle_keydown(SDL_Keysym sym) {
+  switch (sym.sym) {
+    case SDLK_LSHIFT:
+    case SDLK_RSHIFT:
+      shift_down = 1;
       break;
     default:
       break;
@@ -685,6 +827,9 @@ void load_textures() {
 
   tile_maybe_tex = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGB24, SDL_TEXTUREACCESS_STATIC, tile_maybe.width, tile_maybe.height);
   SDL_UpdateTexture(tile_maybe_tex, NULL, tile_maybe.pixels, tile_maybe.width * 3);
+
+  tile_maybepress_tex = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGB24, SDL_TEXTUREACCESS_STATIC, tile_maybepress.width, tile_maybepress.height);
+  SDL_UpdateTexture(tile_maybepress_tex, NULL, tile_maybepress.pixels, tile_maybepress.width * 3);
 
   tile_mine_tex = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGB24, SDL_TEXTUREACCESS_STATIC, tile_mine.width, tile_mine.height);
   SDL_UpdateTexture(tile_mine_tex, NULL, tile_mine.pixels, tile_mine.width * 3);
@@ -762,13 +907,16 @@ int main() {
           running = 0;
           break;
         case SDL_MOUSEBUTTONDOWN:
-          handle_mousedown();
+          handle_mousedown(e.button.button);
           break;
         case SDL_MOUSEBUTTONUP:
-          handle_mouseup();
+          handle_mouseup(e.button.button);
           break;
         case SDL_MOUSEMOTION:
           handle_mousemove();
+          break;
+        case SDL_KEYDOWN:
+          handle_keydown(e.key.keysym);
           break;
         case SDL_KEYUP:
           handle_keyup(e.key.keysym);
