@@ -282,7 +282,7 @@ void draw_tile(unsigned state, unsigned x, unsigned y) {
 // Repaint the interface
 void repaint() {
   SDL_SetRenderDrawColor(renderer, 192, 192, 192, 255);
-	SDL_RenderClear(renderer);
+  SDL_RenderClear(renderer);
 
   draw_frame();
   
@@ -956,41 +956,41 @@ void cleanup() {
 
 int main() {
   if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
-		printf("SDL_Init error: %s\n", SDL_GetError());
-		return -1;
-	}
+    printf("SDL_Init error: %s\n", SDL_GetError());
+    return -1;
+  }
 
   srand(time(0));
 
   window = SDL_CreateWindow(
-		"Sweepy",
-		SDL_WINDOWPOS_CENTERED,
-		SDL_WINDOWPOS_CENTERED,
-		L_WIDTH * window_scale,
-		L_HEIGHT * window_scale,
-		SDL_WINDOW_OPENGL
-	);
+    "Sweepy",
+    SDL_WINDOWPOS_CENTERED,
+    SDL_WINDOWPOS_CENTERED,
+    L_WIDTH * window_scale,
+    L_HEIGHT * window_scale,
+    SDL_WINDOW_OPENGL
+  );
 
   renderer = SDL_CreateRenderer(
-		window,
-		-1,
-		SDL_RENDERER_ACCELERATED
-	);
+    window,
+    -1,
+    SDL_RENDERER_ACCELERATED
+  );
 
   SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "nearest");
-	SDL_RenderSetLogicalSize(renderer, L_WIDTH, L_HEIGHT);
-	SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+  SDL_RenderSetLogicalSize(renderer, L_WIDTH, L_HEIGHT);
+  SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
 
   load_textures();
 
   reset_game(beginner.width, beginner.height, beginner.total_mines);
 
   int running = 1;
-	while (running) {
-		SDL_Event e;
-		while (SDL_PollEvent(&e) != 0) {
-			switch (e.type) {
-				case SDL_QUIT:
+  while (running) {
+    SDL_Event e;
+    while (SDL_PollEvent(&e) != 0) {
+      switch (e.type) {
+        case SDL_QUIT:
           running = 0;
           break;
         case SDL_MOUSEBUTTONDOWN:
@@ -1008,11 +1008,11 @@ int main() {
         case SDL_KEYUP:
           handle_keyup(e.key.keysym);
           break;
-			}
-		}
+      }
+    }
     // Throttle at least a tiny bit so it doesn't use 100% CPU
     SDL_Delay(1);
-	}
+  }
 
   cleanup();
 
