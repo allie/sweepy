@@ -466,7 +466,7 @@ void repaint() {
 // Place mines and numbers, ignoring the first click position
 void place_mines(unsigned first_x, unsigned first_y) {
   // Place mines
-  for (int i = 0; i < mines_left; i++) {
+  for (int i = 0; i < total_mines; i++) {
     int placed = 0;
     while (!placed) {
       int x = rand() % width;
