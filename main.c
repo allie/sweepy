@@ -51,7 +51,7 @@ enum {
 
 // Face button states
 enum {
-  FACE_SMILE,
+  FACE_SMILE = 0,
   FACE_CLICK,
   FACE_OPEN,
   FACE_DEAD,
@@ -63,24 +63,12 @@ SDL_Renderer* renderer;
 unsigned window_scale = 1;
 
 // Textures
-SDL_Texture* face_click_tex;
-SDL_Texture* face_dead_tex;
-SDL_Texture* face_smile_tex;
-SDL_Texture* face_open_tex;
-SDL_Texture* face_win_tex;
+SDL_Texture* face_tex[5];
+SDL_Texture* tile_tex[16];
+SDL_Texture* timer_minus_tex;
+SDL_Texture* timer_num_tex[10];
 SDL_Texture* game_corner_tex;
 SDL_Texture* top_corner_tex;
-SDL_Texture* tile_empty_tex;
-SDL_Texture* tile_flag_tex;
-SDL_Texture* tile_maybe_tex;
-SDL_Texture* tile_maybepress_tex;
-SDL_Texture* tile_mine_tex;
-SDL_Texture* tile_redmine_tex;
-SDL_Texture* tile_unclicked_tex;
-SDL_Texture* tile_wrong_tex;
-SDL_Texture* tile_num_tex[8];
-SDL_Texture* timer_num_tex[10];
-SDL_Texture* timer_minus_tex;
 
 // Difficulty presets
 typedef struct {
@@ -281,62 +269,14 @@ void draw_timer() {
 void draw_face() {
   SDL_Rect src = {0, 0, face_smile.width, face_smile.height};
   SDL_Rect dst = {FACE_X, FACE_Y, face_smile.width, face_smile.height};
-
-  switch (face) {
-    case FACE_SMILE:
-      SDL_RenderCopy(renderer, face_smile_tex, &src, &dst);
-      break;
-    case FACE_CLICK:
-      SDL_RenderCopy(renderer, face_click_tex, &src, &dst);
-      break;
-    case FACE_OPEN:
-      SDL_RenderCopy(renderer, face_open_tex, &src, &dst);
-      break;
-    case FACE_DEAD:
-      SDL_RenderCopy(renderer, face_dead_tex, &src, &dst);
-      break;
-    case FACE_WIN:
-      SDL_RenderCopy(renderer, face_win_tex, &src, &dst);
-      break;
-    default:
-      break;
-  }
+  SDL_RenderCopy(renderer, face_tex[face], &src, &dst);
 }
 
 // Draw a tile with a given render state at a given position (tile-indexed)
 void draw_tile(unsigned state, unsigned x, unsigned y) {
   SDL_Rect src = {0, 0, TILE_SIZE, TILE_SIZE};
   SDL_Rect dst = {x * TILE_SIZE + FIELD_X, y * TILE_SIZE + FIELD_Y, TILE_SIZE, TILE_SIZE};
-
-  switch (state) {
-    case TILE_UNCLICKED:
-      SDL_RenderCopy(renderer, tile_unclicked_tex, &src, &dst);
-      break;
-    case TILE_EMPTY:
-      SDL_RenderCopy(renderer, tile_empty_tex, &src, &dst);
-      break;
-    case TILE_FLAG:
-      SDL_RenderCopy(renderer, tile_flag_tex, &src, &dst);
-      break;
-    case TILE_MAYBE:
-      SDL_RenderCopy(renderer, tile_maybe_tex, &src, &dst);
-      break;
-    case TILE_MAYBEPRESS:
-      SDL_RenderCopy(renderer, tile_maybepress_tex, &src, &dst);
-      break;
-    case TILE_MINE:
-      SDL_RenderCopy(renderer, tile_mine_tex, &src, &dst);
-      break;
-    case TILE_REDMINE:
-      SDL_RenderCopy(renderer, tile_redmine_tex, &src, &dst);
-      break;
-    case TILE_WRONG:
-      SDL_RenderCopy(renderer, tile_wrong_tex, &src, &dst);
-      break;
-    default:
-      SDL_RenderCopy(renderer, tile_num_tex[state - 1], &src, &dst);
-      break;
-  }
+  SDL_RenderCopy(renderer, tile_tex[state], &src, &dst);
 }
 
 // Repaint the interface
@@ -905,7 +845,16 @@ void handle_keydown(SDL_Keysym sym) {
 
 // Load textures from image data
 void load_textures() {
-  Image tile_num[] = {
+  Image face_images[] = {
+    face_smile,
+    face_click,
+    face_open,
+    face_dead,
+    face_win
+  };
+
+  Image tile_images[] = {
+    tile_empty,
     tile_1,
     tile_2,
     tile_3,
@@ -913,10 +862,17 @@ void load_textures() {
     tile_5,
     tile_6,
     tile_7,
-    tile_8
+    tile_8,
+    tile_unclicked,
+    tile_flag,
+    tile_maybe,
+    tile_maybepress,
+    tile_mine,
+    tile_redmine,
+    tile_wrong
   };
 
-  Image timer_num[] = {
+  Image timer_num_images[] = {
     timer_0,
     timer_1,
     timer_2,
@@ -929,63 +885,69 @@ void load_textures() {
     timer_9
   };
 
-  face_click_tex = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGB24, SDL_TEXTUREACCESS_STATIC, face_click.width, face_click.height);
-  SDL_UpdateTexture(face_click_tex, NULL, face_click.pixels, face_click.width * 3);
+  // Load face textures
+  for (int i = 0; i < 5; i++) {
+    face_tex[i] = SDL_CreateTexture(
+      renderer,
+      SDL_PIXELFORMAT_RGB24,
+      SDL_TEXTUREACCESS_STATIC,
+      face_images[i].width,
+      face_images[i].height
+    );
+    SDL_UpdateTexture(face_tex[i], NULL, face_images[i].pixels, face_images[i].width * 3);
+  }
 
-  face_dead_tex = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGB24, SDL_TEXTUREACCESS_STATIC, face_dead.width, face_dead.height);
-  SDL_UpdateTexture(face_dead_tex, NULL, face_dead.pixels, face_dead.width * 3);
+  // Load tile textures
+  for (int i = 0; i < 16; i++) {
+    tile_tex[i] = SDL_CreateTexture(
+      renderer,
+      SDL_PIXELFORMAT_RGB24,
+      SDL_TEXTUREACCESS_STATIC,
+      tile_images[i].width,
+      tile_images[i].height
+    );
+    SDL_UpdateTexture(tile_tex[i], NULL, tile_images[i].pixels, tile_images[i].width * 3);
+  }
 
-  face_smile_tex = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGB24, SDL_TEXTUREACCESS_STATIC, face_smile.width, face_smile.height);
-  SDL_UpdateTexture(face_smile_tex, NULL, face_smile.pixels, face_smile.width * 3);
-
-  face_open_tex = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGB24, SDL_TEXTUREACCESS_STATIC, face_open.width, face_open.height);
-  SDL_UpdateTexture(face_open_tex, NULL, face_open.pixels, face_open.width * 3);
-
-  face_win_tex = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGB24, SDL_TEXTUREACCESS_STATIC, face_win.width, face_win.height);
-  SDL_UpdateTexture(face_win_tex, NULL, face_win.pixels, face_win.width * 3);
-
-  game_corner_tex = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGB24, SDL_TEXTUREACCESS_STATIC, game_corner.width, game_corner.height);
-  SDL_UpdateTexture(game_corner_tex, NULL, game_corner.pixels, game_corner.width * 3);
-  
-  top_corner_tex = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGB24, SDL_TEXTUREACCESS_STATIC, top_corner.width, top_corner.height);
-  SDL_UpdateTexture(top_corner_tex, NULL, top_corner.pixels, top_corner.width * 3);
-
-  tile_empty_tex = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGB24, SDL_TEXTUREACCESS_STATIC, tile_empty.width, tile_empty.height);
-  SDL_UpdateTexture(tile_empty_tex, NULL, tile_empty.pixels, tile_empty.width * 3);
-
-  tile_flag_tex = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGB24, SDL_TEXTUREACCESS_STATIC, tile_flag.width, tile_flag.height);
-  SDL_UpdateTexture(tile_flag_tex, NULL, tile_flag.pixels, tile_flag.width * 3);
-
-  tile_maybe_tex = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGB24, SDL_TEXTUREACCESS_STATIC, tile_maybe.width, tile_maybe.height);
-  SDL_UpdateTexture(tile_maybe_tex, NULL, tile_maybe.pixels, tile_maybe.width * 3);
-
-  tile_maybepress_tex = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGB24, SDL_TEXTUREACCESS_STATIC, tile_maybepress.width, tile_maybepress.height);
-  SDL_UpdateTexture(tile_maybepress_tex, NULL, tile_maybepress.pixels, tile_maybepress.width * 3);
-
-  tile_mine_tex = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGB24, SDL_TEXTUREACCESS_STATIC, tile_mine.width, tile_mine.height);
-  SDL_UpdateTexture(tile_mine_tex, NULL, tile_mine.pixels, tile_mine.width * 3);
-
-  tile_redmine_tex = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGB24, SDL_TEXTUREACCESS_STATIC, tile_redmine.width, tile_redmine.height);
-  SDL_UpdateTexture(tile_redmine_tex, NULL, tile_redmine.pixels, tile_redmine.width * 3);
-
-  tile_unclicked_tex = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGB24, SDL_TEXTUREACCESS_STATIC, tile_unclicked.width, tile_unclicked.height);
-  SDL_UpdateTexture(tile_unclicked_tex, NULL, tile_unclicked.pixels, tile_unclicked.width * 3);
-
-  tile_wrong_tex = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGB24, SDL_TEXTUREACCESS_STATIC, tile_wrong.width, tile_wrong.height);
-  SDL_UpdateTexture(tile_wrong_tex, NULL, tile_wrong.pixels, tile_wrong.width * 3);
-
-  timer_minus_tex = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGB24, SDL_TEXTUREACCESS_STATIC, timer_minus.width, timer_minus.height);
+  // Load timer textures
+  timer_minus_tex = SDL_CreateTexture(
+    renderer,
+    SDL_PIXELFORMAT_RGB24,
+    SDL_TEXTUREACCESS_STATIC,
+    timer_minus.width,
+    timer_minus.height
+  );
   SDL_UpdateTexture(timer_minus_tex, NULL, timer_minus.pixels, timer_minus.width * 3);
 
-  for (int i = 0; i < 8; i++) {
-    tile_num_tex[i] = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGB24, SDL_TEXTUREACCESS_STATIC, tile_num[i].width, tile_num[i].height);
-    SDL_UpdateTexture(tile_num_tex[i], NULL, tile_num[i].pixels, tile_num[i].width * 3);
+  for (int i = 0; i < 10; i++) {
+    timer_num_tex[i] = SDL_CreateTexture(
+      renderer,
+      SDL_PIXELFORMAT_RGB24,
+      SDL_TEXTUREACCESS_STATIC,
+      timer_num_images[i].width,
+      timer_num_images[i].height
+    );
+    SDL_UpdateTexture(timer_num_tex[i], NULL, timer_num_images[i].pixels, timer_num_images[i].width * 3);
   }
 
-  for (int i = 0; i < 10; i++) {
-    timer_num_tex[i] = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGB24, SDL_TEXTUREACCESS_STATIC, timer_num[i].width, timer_num[i].height);
-    SDL_UpdateTexture(timer_num_tex[i], NULL, timer_num[i].pixels, timer_num[i].width * 3);
-  }
+  // Load game frame textures
+  game_corner_tex = SDL_CreateTexture(
+    renderer,
+    SDL_PIXELFORMAT_RGB24,
+    SDL_TEXTUREACCESS_STATIC,
+    game_corner.width,
+    game_corner.height
+  );
+  SDL_UpdateTexture(game_corner_tex, NULL, game_corner.pixels, game_corner.width * 3);
+  
+  top_corner_tex = SDL_CreateTexture(
+    renderer,
+    SDL_PIXELFORMAT_RGB24,
+    SDL_TEXTUREACCESS_STATIC,
+    top_corner.width,
+    top_corner.height
+  );
+  SDL_UpdateTexture(top_corner_tex, NULL, top_corner.pixels, top_corner.width * 3);
 }
 
 void cleanup() {
