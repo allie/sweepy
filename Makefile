@@ -1,6 +1,6 @@
 CC=clang
-CFLAGS=-std=c99 -g -c -D_POSIX_C_SOURCE=200112L -DUNOFFICIAL_MODE -Iinclude -I/usr/local/include
-LDFLAGS=-lSDL2 -lSDL2_image -lm
+CFLAGS=-std=c99 -c -D_POSIX_C_SOURCE=200112L -DUNOFFICIAL_MODE -Iinclude -I/usr/local/include
+LDFLAGS=-lSDL2 -lm
 SOURCES=main.c
 OBJECTS=$(SOURCES:.c=.o)
 EXECUTABLE=mines
@@ -13,8 +13,11 @@ endif
 
 all: $(SOURCES) $(EXECUTABLE)
 
-debug: CFLAGS += -DDEBUG_MODE
+debug: CFLAGS += -DDEBUG_MODE -g
 debug: all
+
+prod: CFLAGS += -O3
+prod: all
 
 $(EXECUTABLE): $(OBJECTS)
 	$(CC) -o $@ $(OBJECTS) $(LDFLAGS)
