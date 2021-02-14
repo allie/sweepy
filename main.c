@@ -560,8 +560,6 @@ void reset_game(unsigned new_width, unsigned new_height, unsigned new_total_mine
 
 // Mine was clicked, reveal all the mines and wrong flags
 void game_over() {
-  dead = 1;
-
   for (int i = 0; i < width * height; i++) {
     if (tiles[i] == TILE_FLAG && field[i] != TILE_MINE) {
       tiles[i] = TILE_WRONG;
@@ -686,7 +684,10 @@ void handle_tile_click(unsigned x, unsigned y) {
     if (flag_count != tiles[i]) {
       return;
     }
-  } else {
+  }
+  // If there is only one selected tile, set the iteration bounds to
+  // just the current tile index
+  else {
     min_x = x;
     min_y = y;
     max_x = x;
@@ -698,23 +699,39 @@ void handle_tile_click(unsigned x, unsigned y) {
     for (int nx = min_x; nx <= max_x; nx++) {
       int i = ny * width + nx;
 
+      // If single clicking and this tile is already uncovered, do nothing
       if (!multiselect && tiles[i] != TILE_UNCLICKED && tiles[i] != TILE_MAYBE) {
         return;
       }
 
+      // If this tile is flagged, skip it
       if (tiles[i] == TILE_FLAG) {
         continue;
-      } else if (field[i] == TILE_MINE) {
+      }
+
+      // If this tile is a mine, reveal it and set the dead flag
+      if (field[i] == TILE_MINE) {
         tiles[i] = TILE_REDMINE;
-        game_over();
-      } else if (field[i] != TILE_EMPTY) {
-        tiles[i] = field[i];
-        check_win();
-      } else {
+        dead = 1;
+      }
+      // If the tile is empty, flood fill it
+      else if (field[i] == TILE_EMPTY) {
         flood_fill(x, y);
-        check_win();
+      }
+      // If the tile is not empty, uncover it
+      else {
+        tiles[i] = field[i];
       }
     }
+  }
+
+  // If a mine was hit, game over
+  if (dead) {
+    game_over();
+  }
+  // Otherwise, check for a win after this click
+  else {
+    check_win();
   }
 }
 
