@@ -4,7 +4,7 @@ An accurate, lightweight, cross-platform, open-source re-implementation of Windo
 
 ## Building
 
-SDL2 must be installed on your system first before building. Then just run `make` in the root directory.
+SDL2 must be installed on your system first before building. Then just run `make` in the root directory. Use `make debug` to compile with debug symbols, or `make prod` to compile with optimization.
 
 ## Controls
 Mouse:
