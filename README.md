@@ -6,7 +6,14 @@ An accurate, lightweight, cross-platform, open-source re-implementation of Windo
 
 SDL2 must be installed on your system first before building. Then just run `make` in the root directory.
 
-## Hotkeys
+## Controls
+Mouse:
+```
+Left: Reveal a tile
+Right: Place a flag or (?) marker
+Middle / Shift+Left / Left+Right: Clear surrounding tiles
+```
+Keyboard:
 ```
 r: Reset the game
 b: Choose beginner difficulty (before first click)
