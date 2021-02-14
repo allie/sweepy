@@ -123,6 +123,7 @@ struct {
   0
 };
 
+int multiselect = 0;
 struct {
   int x;
   int y;
@@ -357,10 +358,33 @@ void repaint() {
   }
 
   if (selected_tile.x > -1 && selected_tile.y > -1) {
-    if (tiles[selected_tile.y * width + selected_tile.x] == TILE_MAYBE) {
-      draw_tile(TILE_MAYBEPRESS, selected_tile.x, selected_tile.y);
+    if (multiselect) {
+      // Determine the indices of the surrounding tiles
+      unsigned min_x = selected_tile.x != 0 ? selected_tile.x - 1 : selected_tile.x;
+      unsigned min_y = selected_tile.y != 0 ? selected_tile.y - 1 : selected_tile.y;
+      unsigned max_x = selected_tile.x != width - 1 ? selected_tile.x + 1 : selected_tile.x;
+      unsigned max_y = selected_tile.y != height - 1 ? selected_tile.y + 1 : selected_tile.y;
+
+      for (int y = min_y; y <= max_y; y++) {
+        for (int x = min_x; x <= max_x; x++) {
+          int i = y * width + x;
+          if (tiles[i] == TILE_MAYBE) {
+            draw_tile(TILE_MAYBEPRESS, x, y);
+          } else if (tiles[i] != TILE_FLAG) {
+            if (tiles[i] > 0 && tiles[i] < 9) {
+              draw_tile(tiles[i], x, y);
+            } else {
+              draw_tile(TILE_EMPTY, x, y);
+            }
+          }
+        }
+      }
     } else {
-      draw_tile(TILE_EMPTY, selected_tile.x, selected_tile.y);
+      if (tiles[selected_tile.y * width + selected_tile.x] == TILE_MAYBE) {
+        draw_tile(TILE_MAYBEPRESS, selected_tile.x, selected_tile.y);
+      } else {
+        draw_tile(TILE_EMPTY, selected_tile.x, selected_tile.y);
+      }
     }
   }
 
@@ -554,24 +578,77 @@ void flood_fill(unsigned x, unsigned y) {
 
 // Reveal a tile after mouseup while hovering over it
 void handle_tile_click(unsigned x, unsigned y) {
+  // Place mines during the first click
   if (!started) {
     place_mines(x, y);
   }
 
-  int i = y * width + x;
+  // Determine the indices of the tiles to check
+  unsigned min_x;
+  unsigned min_y;
+  unsigned max_x;
+  unsigned max_y;
 
-  if (tiles[i] != TILE_UNCLICKED && tiles[i] != TILE_MAYBE) {
-    return;
+  // If multiselecting, the current tile and all surrounding tiles will be checked
+  // The current tile must be an uncovered number tile, and the number of flags must
+  // equal the current tile's number, or else nothing will happen
+  if (multiselect) {
+    min_x = x != 0 ? x - 1 : x;
+    min_y = y != 0 ? y - 1 : y;
+    max_x = x != width - 1 ? x + 1 : x;
+    max_y = y != height - 1 ? y + 1 : y;
+
+    int i = y * width + x;
+
+    // Return if multiselecting on a non-number tile
+    if (tiles[i] == 0 || tiles[i] > 8) {
+      return;
+    }
+
+    // Check if there are enough flags
+    int flag_count = 0;
+    for (int ny = min_y; ny <= max_y; ny++) {
+      for (int nx = min_x; nx <= max_x; nx++) {
+        if (nx == x && ny == y) {
+          continue;
+        }
+
+        if (tiles[ny * width + nx] == TILE_FLAG) {
+          flag_count++;
+        }
+      }
+    }
+    if (flag_count != tiles[i]) {
+      return;
+    }
+  } else {
+    min_x = x;
+    min_y = y;
+    max_x = x;
+    max_y = y;
   }
 
-  if (field[i] == TILE_MINE) {
-    tiles[i] = TILE_REDMINE;
-    game_over();
-  } else if (field[i] != TILE_EMPTY) {
-    tiles[i] = field[i];
-    check_win();
-  } else {
-    flood_fill(x, y);
+  // Reveal the selected tile(s)
+  for (int ny = min_y; ny <= max_y; ny++) {
+    for (int nx = min_x; nx <= max_x; nx++) {
+      int i = ny * width + nx;
+
+      if (!multiselect && tiles[i] != TILE_UNCLICKED && tiles[i] != TILE_MAYBE) {
+        return;
+      }
+
+      if (tiles[i] == TILE_FLAG) {
+        continue;
+      } else if (field[i] == TILE_MINE) {
+        tiles[i] = TILE_REDMINE;
+        game_over();
+      } else if (field[i] != TILE_EMPTY) {
+        tiles[i] = field[i];
+        check_win();
+      } else {
+        flood_fill(x, y);
+      }
+    }
   }
 }
 
@@ -583,6 +660,15 @@ void handle_mousedown(unsigned button) {
     mouse_buttons.middle = 1;
   } else if (button == SDL_BUTTON_RIGHT) {
     mouse_buttons.right = 1;
+  }
+
+  // Figure out if multiselecting
+  if (
+    (shift_down && mouse_buttons.left) ||
+    (mouse_buttons.left && mouse_buttons.right) ||
+    mouse_buttons.middle
+  ) {
+    multiselect = 1;
   }
 
   int x, y;
@@ -613,15 +699,20 @@ void handle_mousedown(unsigned button) {
     unsigned ty = (y - FIELD_Y) / TILE_SIZE;
     unsigned i = ty * width + tx;
 
-    // Left click only
-    if (mouse_buttons.left && !mouse_buttons.right && !mouse_buttons.middle) {
+    // Multiselect
+    if (multiselect) {
+      selected_tile.x = tx;
+      selected_tile.y = ty;
+    }
+    // Left click
+    else if (mouse_buttons.left && !mouse_buttons.right && !mouse_buttons.middle) {
       if (tiles[i] == TILE_UNCLICKED || tiles[i] == TILE_MAYBE) {
         selected_tile.x = tx;
         selected_tile.y = ty;
       }
     }
     // Right click only
-    if (mouse_buttons.right && !mouse_buttons.left && !mouse_buttons.middle) {
+    else if (mouse_buttons.right && !mouse_buttons.left && !mouse_buttons.middle) {
       if (tiles[i] == TILE_UNCLICKED) {
         tiles[i] = TILE_FLAG;
         mines_left--;
@@ -670,6 +761,7 @@ void handle_mouseup(unsigned button) {
     int tx = (x - FIELD_X) / TILE_SIZE;
     int ty = (y - FIELD_Y) / TILE_SIZE;
     handle_tile_click(tx, ty);
+    multiselect = 0;
   }
 
   if (!win) {
@@ -732,7 +824,7 @@ void handle_mousemove() {
     unsigned ty = (y - FIELD_Y) / TILE_SIZE;
     unsigned i = ty * width + tx;
 
-    if (tiles[i] == TILE_UNCLICKED || tiles[i] == TILE_MAYBE) {
+    if (multiselect || (tiles[i] == TILE_UNCLICKED || tiles[i] == TILE_MAYBE)) {
       selected_tile.x = tx;
       selected_tile.y = ty;
       needs_repaint = 1;
