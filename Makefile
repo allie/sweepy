@@ -11,6 +11,8 @@ ifneq (, $(findstring mingw, $(OS)))
 	CC=gcc
 endif
 
+.PHONY: all debug prod clean
+
 all: $(SOURCES) $(EXECUTABLE)
 
 debug: CFLAGS += -DDEBUG_MODE -g
@@ -26,5 +28,5 @@ $(EXECUTABLE): $(OBJECTS)
 	$(CC) $(CFLAGS) $< -o $@
 
 clean:
-	rm $(EXECUTABLE)
-	find . -name "*.o" -print0 | xargs -0 rm
+	rm -f $(EXECUTABLE)
+	find . -name "*.o" -print0 | xargs -0 rm -f
