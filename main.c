@@ -82,6 +82,17 @@ SDL_Texture* tile_num_tex[8];
 SDL_Texture* timer_num_tex[10];
 SDL_Texture* timer_minus_tex;
 
+// Difficulty presets
+typedef struct {
+  unsigned width;
+  unsigned height;
+  unsigned total_mines;
+} Difficulty;
+
+Difficulty beginner = { 9, 9, 10 };
+Difficulty intermediate = { 16, 16, 40 };
+Difficulty expert = { 30, 16, 99 };
+
 // Game state variables
 unsigned width = 9;
 unsigned height = 9;
@@ -91,7 +102,7 @@ unsigned face = FACE_SMILE;
 unsigned total_mines = 10;
 int mines_left = 10;
 
-int placed = 0;
+int started = 0;
 int dead = 0;
 int win = 0;
 
@@ -423,13 +434,17 @@ void place_mines(unsigned first_x, unsigned first_y) {
     }
   }
 
-  placed = 1;
+  started = 1;
 }
 
 // Start a new game
-void reset_game() {
-  width = 9;
-  height = 9;
+void reset_game(unsigned new_width, unsigned new_height, unsigned new_total_mines) {
+  width = new_width > FIELD_MAX_WIDTH ? FIELD_MAX_WIDTH : new_width;
+  height = new_height > FIELD_MAX_HEIGHT ? FIELD_MAX_HEIGHT : new_height;
+
+  total_mines = new_total_mines > MAX_MINE_COUNT ? MAX_MINE_COUNT : new_total_mines;
+  mines_left = total_mines;
+
   timer = 0;
   face = FACE_SMILE;
 
@@ -437,10 +452,7 @@ void reset_game() {
   selected_tile.y = -1;
   face_pressed = 0;
 
-  total_mines = 2;
-  mines_left = total_mines;
-
-  placed = 0;
+  started = 0;
   dead = 0;
   win = 0;
 
@@ -502,8 +514,12 @@ void check_win() {
 void flood_fill(unsigned x, unsigned y) {
   int i = y * width + x;
 
-  tiles[i] = field[i];
+  // Uncover the current tile, if it's not flagged
+  if (tiles[i] != TILE_FLAG) {
+    tiles[i] = field[i];
+  }
 
+  // Determine the indices of the surrounding tiles
   unsigned min_x = x != 0 ? x - 1 : x;
   unsigned min_y = y != 0 ? y - 1 : y;
   unsigned max_x = x != width - 1 ? x + 1 : x;
@@ -511,10 +527,12 @@ void flood_fill(unsigned x, unsigned y) {
 
   for (unsigned ny = min_y; ny <= max_y; ny++) {
     for (unsigned nx = min_x; nx <= max_x; nx++) {
-      if (nx == x && ny == x) {
+      // Skip the current tile, only check surrounding ones
+      if (nx == x && ny == y) {
         continue;
       }
 
+      // Calculate the index of the next tile to check
       unsigned ni = ny * width + nx;
 
       // If the current tile is a number tile and the next tile is a number tile, skip it
@@ -523,9 +541,10 @@ void flood_fill(unsigned x, unsigned y) {
       }
 
       // Otherwise, recurse with the next tile, if it's eligible
+      // The next tile must be empty or a number tile, and unclicked
       if (
         field[ni] < TILE_UNCLICKED &&
-        tiles[ni] == TILE_UNCLICKED
+        (tiles[ni] == TILE_UNCLICKED || tiles[ni] == TILE_FLAG || tiles[ni] == TILE_MAYBE)
       ) {
         flood_fill(nx, ny);
       }
@@ -535,7 +554,7 @@ void flood_fill(unsigned x, unsigned y) {
 
 // Reveal a tile after mouseup while hovering over it
 void handle_tile_click(unsigned x, unsigned y) {
-  if (!placed) {
+  if (!started) {
     place_mines(x, y);
   }
 
@@ -632,7 +651,7 @@ void handle_mouseup(unsigned button) {
 
   // Change the face, if it's pressed down
   if (face_pressed && x >= FACE_X && x < FACE_X + face_smile.width && y >= FACE_Y && y < FACE_Y + face_smile.height) {
-    reset_game();
+    reset_game(width, height, total_mines);
   }
 
   // Clicks within the playfield
@@ -736,6 +755,18 @@ void handle_mousemove() {
 // Handle keypress
 void handle_keyup(SDL_Keysym sym) {
   switch (sym.sym) {
+    case SDLK_LSHIFT:
+    case SDLK_RSHIFT:
+      shift_down = 0;
+      break;
+    default:
+      break;
+  }
+}
+
+// Handle key down
+void handle_keydown(SDL_Keysym sym) {
+  switch (sym.sym) {
     case SDLK_EQUALS:
       window_scale++;
       SDL_SetWindowSize(window, L_WIDTH * window_scale, L_HEIGHT * window_scale);
@@ -749,20 +780,26 @@ void handle_keyup(SDL_Keysym sym) {
       break;
     case SDLK_F2:
     case SDLK_r:
-      reset_game();
+      reset_game(width, height, total_mines);
       break;
-    case SDLK_LSHIFT:
-    case SDLK_RSHIFT:
-      shift_down = 0;
+    case SDLK_b: {
+      if (!started) {
+        reset_game(beginner.width, beginner.height, beginner.total_mines);
+      }
       break;
-    default:
+    }
+    case SDLK_i: {
+      if (!started) {
+        reset_game(intermediate.width, intermediate.height, intermediate.total_mines);
+      }
       break;
-  }
-}
-
-// Handle key down
-void handle_keydown(SDL_Keysym sym) {
-  switch (sym.sym) {
+    }
+    case SDLK_e: {
+      if (!started) {
+        reset_game(expert.width, expert.height, expert.total_mines);
+      }
+      break;
+    }
     case SDLK_LSHIFT:
     case SDLK_RSHIFT:
       shift_down = 1;
@@ -896,7 +933,7 @@ int main() {
 
   load_textures();
 
-  reset_game();
+  reset_game(beginner.width, beginner.height, beginner.total_mines);
 
   int running = 1;
 	while (running) {
