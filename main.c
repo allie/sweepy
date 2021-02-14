@@ -459,7 +459,7 @@ void game_over() {
 
 // Check whether the game has been won
 void check_win() {
-  if (mines_left != 0) {
+  if (mines_left < 0) {
     return;
   }
 
@@ -473,6 +473,13 @@ void check_win() {
   if (uncovered == width * height - total_mines) {
     win = 1;
     face = FACE_WIN;
+
+    // Reveal any tiles that are still covered
+    for (int i = 0; i < width * height; i++) {
+      if (field[i] == TILE_MINE) {
+        tiles[i] = TILE_FLAG;
+      }
+    }
   }
 }
 
@@ -589,6 +596,7 @@ void handle_tile_click(unsigned x, unsigned y) {
         check_win();
       } else {
         flood_fill(x, y);
+        check_win();
       }
     }
   }
