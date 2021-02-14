@@ -30,11 +30,9 @@ e: Choose expert difficulty (before first click)
 ## To do
 * Display negative numbers in the mine counter
 * Make the timer work
-* Fix flood_fill bug with flags that overwrites mines and numbers
 * Hotkey to toggle (?) markers
 * Allow custom field size and mine count
 * Double check multiselect behaviour accuracy
 * Add some status text when changing options
 * Persist options
 * Add persistent high scores
-* Find and fix rare segfault
