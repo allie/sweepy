@@ -431,6 +431,11 @@ void draw_face() {
 void draw_tile(unsigned state, unsigned x, unsigned y) {
   SDL_Rect src = {0, 0, TILE_SIZE, TILE_SIZE};
   SDL_Rect dst = {x * TILE_SIZE + FIELD_X, y * TILE_SIZE + FIELD_Y, TILE_SIZE, TILE_SIZE};
+#ifdef DEBUG_MODE
+  if (field[y * width + x] == TILE_MINE)
+    SDL_RenderCopy(renderer, tile_tex[TILE_MINE], &src, &dst);
+  else
+#endif
   SDL_RenderCopy(renderer, tile_tex[state], &src, &dst);
 }
 
@@ -507,7 +512,7 @@ void place_mines(unsigned first_x, unsigned first_y) {
       int y = rand() % height;
       int i = y * width + x;
 
-      if (x != first_x || y != first_y && field[i] != TILE_MINE) {
+      if ((x != first_x || y != first_y) && field[i] != TILE_MINE) {
         field[i] = TILE_MINE;
         placed = 1;
       }
@@ -846,7 +851,6 @@ void handle_mousedown(unsigned button) {
       if (tiles[i] == TILE_UNCLICKED) {
         tiles[i] = TILE_FLAG;
         mines_left--;
-        check_win();
       } else if (tiles[i] == TILE_FLAG) {
         tiles[i] = maybe_enabled ? TILE_MAYBE : TILE_UNCLICKED;
         mines_left++;
