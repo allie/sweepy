@@ -34,3 +34,4 @@ e: Choose expert difficulty (before first click)
 * Add some status text when changing options
 * Persist options
 * Add persistent high scores
+* Add WRAPFIELD mode
