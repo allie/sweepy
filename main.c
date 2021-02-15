@@ -1219,6 +1219,8 @@ int main() {
     }
 
     // Throttle at least a tiny bit so it doesn't use 100% CPU
+    // This seems to run as well as, or better than, using SDL_WaitEvent,
+    // and it allows for accurate timer updates
     SDL_Delay(1);
   }
 
