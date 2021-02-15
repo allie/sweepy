@@ -1,7 +1,7 @@
 # Sweepy
 
 <p align="center">
-  <img width="388" src="https://i.imgur.com/Fs0Xy3H.png" alt="Screenshot of Sweepy" />
+  <img width="388" src="https://i.imgur.com/kQVaiVa.png" alt="Screenshot of Sweepy" />
 </p>
 
 An accurate, lightweight, cross-platform, open-source re-implementation of Windows Minesweeper, written in C and built on SDL.
