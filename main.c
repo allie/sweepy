@@ -1185,9 +1185,15 @@ int main() {
     if (started && !timer_stopped && !dead && !win) {
       struct timespec current_time;
       clock_gettime(CLOCK_MONOTONIC, &current_time);
-      unsigned elapsed = (unsigned)(current_time.tv_sec - start_time.tv_sec);
-      if (elapsed > timer) {
-        timer = (unsigned)elapsed;
+
+      time_t diff = current_time.tv_sec - start_time.tv_sec;
+      long nsec_diff = current_time.tv_nsec - start_time.tv_nsec;
+      if (nsec_diff < 0) {
+        diff--;
+      }
+
+      if (diff > timer) {
+        timer = (unsigned)diff;
         repaint();
       }
     }
