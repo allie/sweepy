@@ -58,6 +58,12 @@ enum {
   FACE_WIN
 };
 
+// Timer states
+enum {
+  // 0-9 are implied
+  TIMER_MINUS = 10
+};
+
 SDL_Window* window;
 SDL_Renderer* renderer;
 unsigned window_scale = 1;
@@ -65,8 +71,7 @@ unsigned window_scale = 1;
 // Textures
 SDL_Texture* face_tex[5];
 SDL_Texture* tile_tex[16];
-SDL_Texture* timer_minus_tex;
-SDL_Texture* timer_num_tex[10];
+SDL_Texture* timer_tex[11];
 SDL_Texture* game_corner_tex;
 SDL_Texture* top_corner_tex;
 
@@ -368,33 +373,48 @@ void draw_frame() {
 }
 
 // Converts a number to 3 digits for displaying on the timer and mine counts
-void num_to_digits(unsigned num, unsigned* digits) {
+void num_to_digits(int num, int* digits) {
+  // Clamp to [-999, 999]
+  if (num < -999) {
+    num = -999;
+  } else if (num > 999) {
+    num = 999;
+  }
+
   char buf[4];
-  sprintf(buf, "%03d", num);
+  sprintf(buf, "%03d", abs(num));
+
   for (int i = 0; i < 3; i++) {
     digits[i] = buf[i] - '0';
+  }
+
+  // Negative numbers should start with a negative sign
+  // Replace the first digit; Windows minesweeper does it this way as well
+  // If you place enough flags to get past -99, the counter will "wrap" to -01
+  if (num < 0) {
+    digits[0] = TIMER_MINUS;
   }
 }
 
 // Draw the number of mines remaining in the left LCD
 void draw_mine_count() {
-  unsigned digits[3];
+  int digits[3];
   SDL_Rect src = {0, 0, timer_0.width, timer_0.height};
   num_to_digits(mines_left, digits);
   for (int i = 0; i < 3; i++) {
     SDL_Rect dst = {PADDING_LEFT + 5 + i * timer_0.width, PADDING_TOP + 7, timer_0.width, timer_0.height};
-    SDL_RenderCopy(renderer, timer_num_tex[digits[i]], &src, &dst);
+    SDL_RenderCopy(renderer, timer_tex[digits[i]], &src, &dst);
   }
 }
 
 // Draw the number of seconds elapsed in the right LCD
 void draw_timer() {
-  unsigned digits[3];
+  int digits[3];
   SDL_Rect src = {0, 0, timer_0.width, timer_0.height};
   num_to_digits(timer, digits);
   for (int i = 0; i < 3; i++) {
     SDL_Rect dst = {L_WIDTH - PADDING_RIGHT - 46 + i * timer_0.width, PADDING_TOP + 7, timer_0.width, timer_0.height};
-    SDL_RenderCopy(renderer, timer_num_tex[digits[i]], &src, &dst);
+    SDL_RenderCopy(renderer, timer_tex[digits[i]], &src, &dst);
   }
 }
 
@@ -1049,7 +1069,8 @@ void load_textures() {
     timer_6,
     timer_7,
     timer_8,
-    timer_9
+    timer_9,
+    timer_minus
   };
 
   // Load face textures
@@ -1076,25 +1097,15 @@ void load_textures() {
     SDL_UpdateTexture(tile_tex[i], NULL, tile_images[i].pixels, tile_images[i].width * 3);
   }
 
-  // Load timer textures
-  timer_minus_tex = SDL_CreateTexture(
-    renderer,
-    SDL_PIXELFORMAT_RGB24,
-    SDL_TEXTUREACCESS_STATIC,
-    timer_minus.width,
-    timer_minus.height
-  );
-  SDL_UpdateTexture(timer_minus_tex, NULL, timer_minus.pixels, timer_minus.width * 3);
-
-  for (int i = 0; i < 10; i++) {
-    timer_num_tex[i] = SDL_CreateTexture(
+  for (int i = 0; i < 11; i++) {
+    timer_tex[i] = SDL_CreateTexture(
       renderer,
       SDL_PIXELFORMAT_RGB24,
       SDL_TEXTUREACCESS_STATIC,
       timer_num_images[i].width,
       timer_num_images[i].height
     );
-    SDL_UpdateTexture(timer_num_tex[i], NULL, timer_num_images[i].pixels, timer_num_images[i].width * 3);
+    SDL_UpdateTexture(timer_tex[i], NULL, timer_num_images[i].pixels, timer_num_images[i].width * 3);
   }
 
   // Load game frame textures
