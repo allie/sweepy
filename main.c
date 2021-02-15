@@ -84,7 +84,6 @@ Difficulty expert = { 30, 16, 99 };
 // Game state variables
 unsigned width = 9;
 unsigned height = 9;
-unsigned timer = 0;
 unsigned face = FACE_SMILE;
 
 unsigned total_mines = 10;
@@ -93,6 +92,10 @@ int mines_left = 10;
 int started = 0;
 int dead = 0;
 int win = 0;
+
+int timer_stopped = 0;
+unsigned timer = 0;
+struct timespec start_time;
 
 unsigned char* tiles = NULL;
 unsigned char* field = NULL;
@@ -524,6 +527,7 @@ void place_mines(unsigned first_x, unsigned first_y) {
   }
 
   started = 1;
+  clock_gettime(CLOCK_MONOTONIC, &start_time);
 }
 
 // Start a new game
@@ -539,6 +543,7 @@ void reset_game(unsigned new_width, unsigned new_height, unsigned new_total_mine
   total_mines = new_total_mines > MAX_MINE_COUNT ? MAX_MINE_COUNT : new_total_mines;
   mines_left = total_mines;
 
+  timer_stopped = 0;
   timer = 0;
   face = FACE_SMILE;
 
@@ -965,6 +970,9 @@ void handle_keydown(SDL_Keysym sym) {
     case SDLK_EQUALS:
       rescale_window(1);
       break;
+    case SDLK_ESCAPE:
+      timer_stopped = 1;
+      break;
     case SDLK_MINUS:
       rescale_window(-1);
       break;
@@ -1122,7 +1130,7 @@ int main() {
     return -1;
   }
 
-  srand(time(0));
+  srand(time(NULL));
 
   window = SDL_CreateWindow(
     "Sweepy",
@@ -1172,6 +1180,18 @@ int main() {
           break;
       }
     }
+
+    // Update the timer if the game is running and the timer is not stopped
+    if (started && !timer_stopped && !dead && !win) {
+      struct timespec current_time;
+      clock_gettime(CLOCK_MONOTONIC, &current_time);
+      unsigned elapsed = (unsigned)(current_time.tv_sec - start_time.tv_sec);
+      if (elapsed > timer) {
+        timer = (unsigned)elapsed;
+        repaint();
+      }
+    }
+
     // Throttle at least a tiny bit so it doesn't use 100% CPU
     SDL_Delay(1);
   }

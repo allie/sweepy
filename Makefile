@@ -1,5 +1,5 @@
 CC=clang
-CFLAGS=-std=c99 -c -D_POSIX_C_SOURCE=200112L -DUNOFFICIAL_MODE -Iinclude -I/usr/local/include
+CFLAGS=-std=c11 -c -DUNOFFICIAL_MODE -Iinclude -I/usr/local/include
 LDFLAGS=-lSDL2 -lm
 SOURCES=main.c
 OBJECTS=$(SOURCES:.c=.o)
