@@ -528,6 +528,9 @@ void place_mines(unsigned first_x, unsigned first_y) {
 
   started = 1;
   clock_gettime(CLOCK_MONOTONIC, &start_time);
+  // Windows minesweeper starts the timer at 1 on the first click
+  timer = 1;
+  start_time.tv_sec--;
 }
 
 // Start a new game
