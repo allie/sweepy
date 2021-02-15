@@ -463,6 +463,15 @@ void repaint() {
   SDL_RenderPresent(renderer);
 }
 
+// Change the window scale by a given amount, with 1x being the minimum
+void rescale_window(int delta) {
+  window_scale += delta;
+  window_scale = window_scale < 1 ? 1 : window_scale;
+  SDL_SetWindowSize(window, L_WIDTH * window_scale, L_HEIGHT * window_scale);
+  SDL_RenderSetLogicalSize(renderer, L_WIDTH, L_HEIGHT);
+  repaint();
+}
+
 // Place mines and numbers, ignoring the first click position
 void place_mines(unsigned first_x, unsigned first_y) {
   // Place mines
@@ -943,15 +952,10 @@ void handle_keyup(SDL_Keysym sym) {
 void handle_keydown(SDL_Keysym sym) {
   switch (sym.sym) {
     case SDLK_EQUALS:
-      window_scale++;
-      SDL_SetWindowSize(window, L_WIDTH * window_scale, L_HEIGHT * window_scale);
-      SDL_RenderSetLogicalSize(renderer, L_WIDTH, L_HEIGHT);
-      repaint();
+      rescale_window(1);
       break;
     case SDLK_MINUS:
-      window_scale = window_scale > 1 ? window_scale - 1 : 1;
-      SDL_SetWindowSize(window, L_WIDTH * window_scale, L_HEIGHT * window_scale);
-      SDL_RenderSetLogicalSize(renderer, L_WIDTH, L_HEIGHT);
+      rescale_window(-1);
       break;
     case SDLK_F2:
     case SDLK_r:
