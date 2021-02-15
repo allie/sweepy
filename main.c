@@ -1024,7 +1024,6 @@ void handle_keydown(SDL_Keysym sym) {
       break;
     }
     case SDLK_SLASH:
-    case SDLK_QUESTION:
       maybe_enabled = !maybe_enabled;
       break;
     case SDLK_LSHIFT:
