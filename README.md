@@ -28,10 +28,10 @@ e: Choose expert difficulty (before first click)
 ```
 
 ## To do
-* Hotkey to toggle (?) markers
 * Allow custom field size and mine count
 * Double check multiselect behaviour accuracy
 * Add some status text when changing options
 * Persist options
 * Add persistent high scores
 * Add WRAPFIELD mode
+* Use lower bit depth for textures
