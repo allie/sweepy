@@ -631,6 +631,7 @@ void check_win() {
   if (uncovered == width * height - total_mines) {
     win = 1;
     face = FACE_WIN;
+    mines_left = 0;
 
     // Reveal any tiles that are still covered
     for (int i = 0; i < width * height; i++) {
