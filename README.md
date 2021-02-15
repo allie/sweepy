@@ -23,8 +23,9 @@ r: Reset the game
 b: Choose beginner difficulty (before first click)
 i: Choose intermediate difficulty (before first click)
 e: Choose expert difficulty (before first click)
--: Scale down
-=: Scale up
+?: Toggle (?) marks
+-: Scale window down
++: Scale window up
 ```
 
 ## To do
