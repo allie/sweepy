@@ -28,7 +28,6 @@ e: Choose expert difficulty (before first click)
 ```
 
 ## To do
-* Display negative numbers in the mine counter
 * Hotkey to toggle (?) markers
 * Allow custom field size and mine count
 * Double check multiselect behaviour accuracy
