@@ -500,13 +500,15 @@ void rescale_window(int delta) {
 // Place mines and numbers, ignoring the first click position
 void place_mines(unsigned first_x, unsigned first_y) {
   // Place mines
-  for (int i = 0; i < total_mines; i++) {
+  for (int m = 0; m < total_mines; m++) {
     int placed = 0;
     while (!placed) {
       int x = rand() % width;
       int y = rand() % height;
-      if (x != first_x && y != first_y && field[y * width + x] != TILE_MINE) {
-        field[y * width + x] = TILE_MINE;
+      int i = y * width + x;
+
+      if (x != first_x || y != first_y && field[i] != TILE_MINE) {
+        field[i] = TILE_MINE;
         placed = 1;
       }
     }
