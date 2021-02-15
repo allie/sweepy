@@ -528,6 +528,11 @@ void place_mines(unsigned first_x, unsigned first_y) {
 
 // Start a new game
 void reset_game(unsigned new_width, unsigned new_height, unsigned new_total_mines) {
+  // Don't allow resetting the game when the left or middle mouse are down
+  if (mouse_buttons.left || mouse_buttons.middle) {
+    return;
+  }
+
   width = new_width > FIELD_MAX_WIDTH ? FIELD_MAX_WIDTH : new_width;
   height = new_height > FIELD_MAX_HEIGHT ? FIELD_MAX_HEIGHT : new_height;
 
@@ -834,6 +839,11 @@ void handle_mouseup(unsigned button) {
 
   // Change the face, if it's pressed down
   if (face_pressed && x >= FACE_X && x < FACE_X + face_smile.width && y >= FACE_Y && y < FACE_Y + face_smile.height) {
+    // Since the face is being explicitly pressed, reset the mouse state before resetting
+    // In all other cases, resetting shouldn't work while the left/middle mouse are being held
+    mouse_buttons.left = 0;
+    mouse_buttons.middle = 0;
+    mouse_buttons.right = 0;
     reset_game(width, height, total_mines);
   }
 
@@ -853,7 +863,6 @@ void handle_mouseup(unsigned button) {
     int tx = (x - FIELD_X) / TILE_SIZE;
     int ty = (y - FIELD_Y) / TILE_SIZE;
     handle_tile_click(tx, ty);
-    multiselect = 0;
   }
 
   if (!win) {
@@ -868,6 +877,8 @@ void handle_mouseup(unsigned button) {
   } else if (button == SDL_BUTTON_RIGHT) {
     mouse_buttons.right = 0;
   }
+
+  multiselect = 0;
 
   repaint();
 }
