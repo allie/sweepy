@@ -102,6 +102,8 @@ int timer_stopped = 0;
 unsigned timer = 0;
 struct timespec start_time;
 
+int maybe_enabled = 1;
+
 unsigned char* tiles = NULL;
 unsigned char* field = NULL;
 
@@ -843,7 +845,7 @@ void handle_mousedown(unsigned button) {
         mines_left--;
         check_win();
       } else if (tiles[i] == TILE_FLAG) {
-        tiles[i] = TILE_MAYBE;
+        tiles[i] = maybe_enabled ? TILE_MAYBE : TILE_UNCLICKED;
         mines_left++;
       } else if (tiles[i] == TILE_MAYBE) {
         tiles[i] = TILE_UNCLICKED;
@@ -1021,6 +1023,10 @@ void handle_keydown(SDL_Keysym sym) {
       }
       break;
     }
+    case SDLK_SLASH:
+    case SDLK_QUESTION:
+      maybe_enabled = !maybe_enabled;
+      break;
     case SDLK_LSHIFT:
     case SDLK_RSHIFT:
       shift_down = 1;
