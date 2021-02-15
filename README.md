@@ -36,3 +36,4 @@ e: Choose expert difficulty (before first click)
 * Add persistent high scores
 * Add WRAPFIELD mode
 * Use lower bit depth for textures
+* Replace rand() with a better RNG to avoid board cycling
