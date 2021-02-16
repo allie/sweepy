@@ -31,7 +31,6 @@ Esc: Stop timer
 
 ## To do
 * Allow custom field size and mine count
-* Add some status text when changing options
 * Persist options
 * Add persistent high scores
 * Add WRAPFIELD mode
