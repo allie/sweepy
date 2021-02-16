@@ -26,11 +26,11 @@ e: Choose expert difficulty (before first click)
 ?: Toggle (?) marks
 -: Scale window down
 +: Scale window up
+Esc: Stop timer
 ```
 
 ## To do
 * Allow custom field size and mine count
-* Double check multiselect behaviour accuracy
 * Add some status text when changing options
 * Persist options
 * Add persistent high scores
