@@ -1111,6 +1111,7 @@ void handle_keydown(SDL_Keysym sym) {
       rescale_window(1);
       break;
     case SDLK_ESCAPE:
+      show_popup("Timer stopped");
       timer_stopped = 1;
       break;
     case SDLK_MINUS:
