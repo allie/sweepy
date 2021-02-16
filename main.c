@@ -115,20 +115,13 @@ struct {
   int left;
   int middle;
   int right;
-} mouse_buttons = {
-  0,
-  0,
-  0
-};
+} mouse_buttons = { 0, 0, 0 };
 
 int multiselect = 0;
 struct {
   int x;
   int y;
-} selected_tile = {
-  -1,
-  -1
-};
+} selected_tile = { -1, -1 };
 
 // Draw the frame for the game
 void draw_frame() {
@@ -812,8 +805,14 @@ void handle_mousedown(unsigned button) {
   y /= window_scale;
 
   // Change the face, but ignore right clicks
-  if (!(mouse_buttons.right && !mouse_buttons.left && !mouse_buttons.middle)) {
-    if (x >= FACE_X && x < FACE_X + face_smile.width && y >= FACE_Y && y < FACE_Y + face_smile.height) {
+  if (!(mouse_buttons.right && !mouse_buttons.left)) {
+    if (
+      x >= FACE_X &&
+      x < FACE_X + face_smile.width &&
+      y >= FACE_Y &&
+      y < FACE_Y + face_smile.height &&
+      !mouse_buttons.middle
+    ) {
       face_pressed = 1;
       face = FACE_CLICK;
     } else if (!dead && !win) {
@@ -857,7 +856,6 @@ void handle_mousedown(unsigned button) {
       } else if (tiles[i] == TILE_MAYBE) {
         tiles[i] = TILE_UNCLICKED;
       }
-      mouse_buttons.right = 0;
     }
   }
 
@@ -866,6 +864,16 @@ void handle_mousedown(unsigned button) {
 
 // Handle mouseup event
 void handle_mouseup(unsigned button) {
+  // Determine if this was a single right click
+  // If so, we won't treat it as a tile click, because flags are placed on mousedown
+  int right_click = (
+    mouse_buttons.right &&
+    !mouse_buttons.left &&
+    !mouse_buttons.middle &&
+    button == SDL_BUTTON_RIGHT
+  );
+
+  // Reset the selected tile
   selected_tile.x = -1;
   selected_tile.y = -1;
 
@@ -875,7 +883,13 @@ void handle_mouseup(unsigned button) {
   y /= window_scale;
 
   // Change the face, if it's pressed down
-  if (face_pressed && x >= FACE_X && x < FACE_X + face_smile.width && y >= FACE_Y && y < FACE_Y + face_smile.height) {
+  if (
+    face_pressed &&
+    x >= FACE_X &&
+    x < FACE_X + face_smile.width &&
+    y >= FACE_Y &&
+    y < FACE_Y + face_smile.height
+  ) {
     // Since the face is being explicitly pressed, reset the mouse state before resetting
     // In all other cases, resetting shouldn't work while the left/middle mouse are being held
     mouse_buttons.left = 0;
@@ -886,9 +900,7 @@ void handle_mouseup(unsigned button) {
 
   // Clicks within the playfield
   else if (
-    mouse_buttons.left &&
-    !mouse_buttons.right &&
-    !mouse_buttons.middle &&
+    !right_click &&
     !dead &&
     !win &&
     !face_pressed &&
@@ -922,7 +934,7 @@ void handle_mouseup(unsigned button) {
 
 // Handle mousemove event
 void handle_mousemove() {
-  if (!mouse_buttons.left) {
+  if (!mouse_buttons.left && !multiselect) {
     return;
   }
 
