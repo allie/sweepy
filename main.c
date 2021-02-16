@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <time.h>
+#include <string.h>
 #include "images.h"
 
 // Useful macros for drawing the interface and doing calculations
@@ -74,6 +75,7 @@ SDL_Texture* tile_tex[16];
 SDL_Texture* timer_tex[11];
 SDL_Texture* game_corner_tex;
 SDL_Texture* top_corner_tex;
+SDL_Texture* font_tex;
 
 // Difficulty presets
 typedef struct {
@@ -122,6 +124,37 @@ struct {
   int x;
   int y;
 } selected_tile = { -1, -1 };
+
+char* popup_str = NULL;
+int popup_showing = 0;
+SDL_TimerID popup_timer;
+
+// Render a string onto the screen
+void draw_string(const char* str, unsigned x, unsigned y) {
+  unsigned current_x = x;
+  for (int i = 0; i < strlen(str); i++) {
+    unsigned char c = str[i] - ' ';
+    unsigned short position = font_positions[c];
+    unsigned char width = font_widths[c];
+
+    SDL_Rect src = { position, 0, width, font.height };
+    SDL_Rect dst = { current_x, y, width, font.height };
+
+    SDL_RenderCopy(renderer, font_tex, &src, &dst);
+
+    current_x += width;
+  }
+}
+
+// Calculate the total width of a string
+unsigned string_width(const char* str) {
+  unsigned width = 0;
+  for (int i = 0; i < strlen(str); i++) {
+    unsigned char c = str[i] - ' ';
+    width += font_widths[c];
+  }
+  return width;
+}
 
 // Draw the frame for the game
 void draw_frame() {
@@ -432,6 +465,16 @@ void draw_tile(unsigned state, unsigned x, unsigned y) {
   SDL_RenderCopy(renderer, tile_tex[state], &src, &dst);
 }
 
+// Pop up a message in the corner
+void draw_popup_message() {
+  unsigned width = string_width(popup_str);
+  SDL_Rect dst = { 0, 0, width + 2, font.height + 2 };
+  SDL_SetRenderDrawColor(renderer, 0, 0, 0, 192);
+  SDL_RenderFillRect(renderer, &dst);
+  SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+  draw_string(popup_str, 1, 1);
+}
+
 // Repaint the interface
 void repaint() {
   SDL_SetRenderDrawColor(renderer, 192, 192, 192, 255);
@@ -483,7 +526,55 @@ void repaint() {
 
   draw_face();
 
+  if (popup_showing) {
+    draw_popup_message();
+  }
+
   SDL_RenderPresent(renderer);
+}
+
+// Callback to emit an event indicating that the popup is ready to close
+Uint32 popup_callback(Uint32 interval, void* param) {
+  SDL_Event event;
+  SDL_UserEvent userevent;
+
+  userevent.type = SDL_USEREVENT;
+  userevent.code = 0;
+  userevent.data1 = NULL;
+  userevent.data2 = NULL;
+
+  event.type = SDL_USEREVENT;
+  event.user = userevent;
+
+  SDL_PushEvent(&event);
+
+  return interval;
+}
+
+// Destroy the current popup message
+void close_popup() {
+  if (popup_str != NULL) {
+    free(popup_str);
+    popup_str = NULL;
+  }
+  popup_showing = 0;
+  SDL_RemoveTimer(popup_timer);
+
+  repaint();
+}
+
+// Show a popup message for a period of time
+void show_popup(const char* str) {
+  if (popup_showing) {
+    close_popup();
+  }
+  SDL_RemoveTimer(popup_timer);
+
+  popup_str = strdup(str);
+  popup_showing = 1;
+  popup_timer = SDL_AddTimer(2000, popup_callback, NULL);
+
+  repaint();
 }
 
 // Change the window scale by a given amount, with 1x being the minimum
@@ -492,6 +583,11 @@ void rescale_window(int delta) {
   window_scale = window_scale < 1 ? 1 : window_scale;
   SDL_SetWindowSize(window, L_WIDTH * window_scale, L_HEIGHT * window_scale);
   SDL_RenderSetLogicalSize(renderer, L_WIDTH, L_HEIGHT);
+
+  char str[100];
+  sprintf(str, "Window scale: %dx", window_scale);
+  show_popup(str);
+
   repaint();
 }
 
@@ -1026,25 +1122,34 @@ void handle_keydown(SDL_Keysym sym) {
       break;
     case SDLK_b: {
       if (!started) {
+        show_popup("Difficulty: beginner");
         reset_game(beginner.width, beginner.height, beginner.total_mines);
       }
       break;
     }
     case SDLK_i: {
       if (!started) {
+        show_popup("Difficulty: intermediate");
         reset_game(intermediate.width, intermediate.height, intermediate.total_mines);
       }
       break;
     }
     case SDLK_e: {
       if (!started) {
+        show_popup("Difficulty: expert");
         reset_game(expert.width, expert.height, expert.total_mines);
       }
       break;
     }
-    case SDLK_SLASH:
+    case SDLK_SLASH: {
       maybe_enabled = !maybe_enabled;
+      if (maybe_enabled) {
+        show_popup("(?) marks enabled");
+      } else {
+        show_popup("(?) marks disabled");
+      }
       break;
+    }
     case SDLK_LSHIFT:
     case SDLK_RSHIFT:
       shift_down = 1;
@@ -1150,6 +1255,17 @@ void load_textures() {
     top_corner.height
   );
   SDL_UpdateTexture(top_corner_tex, NULL, top_corner.pixels, top_corner.width * 3);
+
+  // Load font texture
+  font_tex = SDL_CreateTexture(
+    renderer,
+    SDL_PIXELFORMAT_RGBA5551,
+    SDL_TEXTUREACCESS_STATIC,
+    font.width,
+    font.height
+  );
+  SDL_UpdateTexture(font_tex, NULL, font.pixels, font.width * 2);
+  SDL_SetTextureBlendMode(font_tex, SDL_BLENDMODE_BLEND);
 }
 
 void cleanup() {
@@ -1215,6 +1331,11 @@ int main() {
           break;
         case SDL_KEYUP:
           handle_keyup(e.key.keysym);
+          break;
+        case SDL_USEREVENT:
+          close_popup();
+          break;
+        default:
           break;
       }
     }

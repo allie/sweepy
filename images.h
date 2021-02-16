@@ -41,5 +41,6 @@ typedef struct {
 #include "images/timer_8.h"
 #include "images/timer_9.h"
 #include "images/timer_minus.h"
+#include "images/font.h"
 
 #endif
